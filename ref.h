@@ -1,24 +1,18 @@
 #pragma once
 #include <map>
-namespace dk {
-	template<class K, class T>
-	const T *resolve_(const K &key, const std::map<K, const T*> &m) {
-		const std::map<K, const T*>::const_iterator it = m.find(key);
-		if (it == m.end()) {
-			return 0;
-		}
-		return it->second;
-	}
 
+namespace dk {
 	template<class T>
 	class Ref : public T::key_type {
 	public:
-		Ref() {}
-		Ref(const typename T::key_type &key) : T::key_type(key) {}
+		Ref() : ptr(0) {}
+		Ref(const typename T::key_type &key) : T::key_type(key),ptr(0) {}
 		const T* ptr;
 		const T *operator->() const { return ptr; }
-		bool resolve(const std::map<typename T::key_type, const T*> &m) {
-			return (ptr = resolve_(static_cast<typename T::key_type&>(*this), m)) != 0;
+		bool resolve(const std::map<typename T::key_type, T> &m) {
+			auto it = m.find(*this);
+			ptr =  (it == m.end() ? nullptr:&it->second);
+			return ptr != 0;
 		}
 	};
 }

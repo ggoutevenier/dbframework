@@ -1,27 +1,25 @@
 #pragma once
-//#include <memory>
-//#include "interface.h"
 #include "metadata.h"
-#include "store.h"
-#include <boost/noncopyable.hpp>
 #include <boost/algorithm/string/join.hpp>
 
 namespace dk {
 	template<class T>
-	class Source : public boost::noncopyable {
+	class Source {
 		std::shared_ptr<IConnection> conn;
 		std::unique_ptr<IStatement> stmt;
-	protected:
 		class iterator {
 			std::unique_ptr<IResultSet> rset;
-			T t;
-			Source *src;
+			Source &src;
 		public:
-			explicit iterator():src(0) {}
-			explicit iterator(Source &s):src(&s) {
-				assert(src);
-				rset = src->stmt->executeQuery();
+			explicit iterator(Source &s):src(s) {}
+			iterator &end() {
+				rset.reset();
+				return *this;
+			}
+			iterator &begin() {
+				rset = src.stmt->executeQuery();
 				this->operator++();
+				return *this;
 			}
 			bool operator==(const iterator &other) const { 
 				return rset.get() == other.rset.get(); 
@@ -32,51 +30,61 @@ namespace dk {
 			iterator& operator++() {
 				if (!rset->next()) {
 					rset.reset();
-					src->pos = 0;
 				}
 				return *this;
 			}
-			const T& operator*() {
-				metadata<T>::record().get(*rset.get(), &t);
-				if (src->store)
-					src->store->resolve(t);
+			const T operator*() {
+				T t;
+				src.record->get(*rset.get(),&t);
+				src.resolve(t);
+
 				return t;
 			}
 		};
 		int pos;
 		std::list<std::string> conditions;
 		std::map<int,std::unique_ptr<IField> > fields; 
-		template<typename T>
-		void bind(const T &t) {
+		template<typename U>
+		void bind(const U u) {
 			++pos;
 			if (fields.find(pos) == fields.end()) {
 				fields.insert(
 					decltype(fields)::value_type(
 						pos,
-						std::make_unique<Field<T> >(
+						std::make_unique<Field<U> >(
 							-1,
-							":" + boost::lexical_cast<std::string>(pos),
+							":" + std::to_string(pos),
 							pos)
 					)
 				);
 			}
-			stmt->bind(t, *fields.at(pos).get());
+			stmt->bind(u, *fields.at(pos).get());
 		}
-		template<typename T, typename... Args>
-		void bind(T first, Args... args) {
+		template<typename U, typename... Args>
+		void bind(U first, Args... args) {
 			bind(first);
 			bind(args...);
 		}
 		Store *store;
+		std::unique_ptr<IRecord> record;
 	public:
-		Source(std::shared_ptr<IConnection> &conn) : conn(conn),store(0) {}
-		Source(std::shared_ptr<IConnection> &conn,Store &s) : conn(conn), store(&s) {}
+		Source(const Source &)=delete;
+		Source(std::shared_ptr<IConnection> conn) :
+			conn(std::move(conn)),
+			pos(0),
+			store(0),
+			record(std::make_unique<Record>(metadata<T>())){}
+		Source(std::shared_ptr<IConnection> conn,Store &s) :
+			conn(std::move(conn)),
+			pos(0),
+			store(&s),
+			record(std::make_unique<Record>(metadata<T>())){}
 		~Source() {
 		}
 		bool is_open() { return stmt.get(); }
 		void open() {
 			std::stringstream ss;
-			ss << conn->getMetaData().selectSQL(metadata<T>::record());
+			ss << conn->getMetaData().selectSQL(*record.get());
 			if (!conditions.empty())
 				ss << " where " << boost::algorithm::join(conditions, " and ");
 			stmt = conn->createStatement(ss.str());
@@ -94,14 +102,24 @@ namespace dk {
 		}
 		iterator begin() { 
 			if (!is_open()) open();
-			return iterator(*this); 
+			auto rtn=iterator(*this);
+			rtn.begin();
+			return rtn;
 		}
-		iterator end() { return iterator(); }
+		iterator end() {
+			auto rtn=iterator(*this);
+			rtn.end();
+			return rtn;
+		}
 		bool fetch(T &t) {
 			iterator it = begin();
 			if (it == end()) return false;
 			t = *it;
 			return true;
+		}
+		void resolve(T &t) {
+			if (store)
+				record->resolve(*store,&t);
 		}
 	};
 }

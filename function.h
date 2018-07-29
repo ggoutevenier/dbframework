@@ -8,23 +8,25 @@ namespace dk {
 		class Function;
 
 		template<class T>
-		class Functions : std::map<typename T::key_type, std::unique_ptr<Function<T> > > {
+		class Functions {
+			using K=typename T::key_type;
+			using M=std::map<K, std::unique_ptr<Function<T> > >;
+			M m_;
 			template<class S>
 			void add() {
-				try_emplace(S::getId(), std::make_unique<S>());
+				m_.insert(typename M::value_type(S::getId(), std::make_unique<S>()));
 			}
 
-			Functions();
+			Functions(); // must be defined in custom cpp code compile in main project
 			static const Functions & getInstance() {
 				static Functions rtn;
 				return rtn;
 			}
 		public:
-			static const Function<T> *getFunction(const typename T::key_type &key) {
-				const Functions<T> &v = getInstance();
-//				const_iterator it = v.find(key);
-				auto it = v.find(key);
-				if (it == v.end()) return 0;
+			static const Function<T> *getFunction(const K &key) {
+				auto &v = getInstance();
+				auto it = v.m_.find(key);
+				if (it == v.m_.end()) return 0;
 				return it->second.get();
 			}
 		};

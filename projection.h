@@ -1,5 +1,5 @@
 #pragma once
-namespace dk {
+namespace xdk {
 	template<class A, class T, class S>
 	inline void projection(T &dst, const S &src) {
 		static_cast<A&>(dst) = src;

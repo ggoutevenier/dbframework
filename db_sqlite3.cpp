@@ -1,12 +1,92 @@
-#include "stdafx.h"
 #include <chrono>
 #include <thread>
+#include "database.h"
 #include "db_sqlite3.h"
 #include <sqlite3.h>
 #include <sstream>
 
 namespace dk {
 	namespace sqlite {
+		class Statement;
+		class Connection : public dk::Connection {
+			friend class Statement;
+		protected:
+			sqlite3 *DB;
+			std::string db;
+			int flags;
+			void open(const std::string &db);
+		public:
+			virtual ~Connection();
+			Connection(const std::string &db, int flags = 0);
+			void close();
+			std::unique_ptr<IStatement> createStatement() override;
+			void rollback() override;
+			void commit() override;
+
+			void execute(const std::string &sql) override;
+			void enableExtensions();
+		};
+
+		std::unique_ptr<IConnection> make_connection(const std::string &db, int flags) {
+			return std::make_unique<Connection>(db,flags);
+		}
+
+		class MetaData : public dk::MetaData {
+		private:
+			Connection & getConnection() { return (Connection&)conn; }
+		protected:
+			const char *dataType(const std::int64_t &, const IField  &f) const override;
+			const char *dataType(const double &, const IField   &f) const override;
+			const char *dataType(const std::string &, const IField  &f) const override;
+		public:
+			virtual ~MetaData() {}
+			MetaData(IConnection &conn);
+		};
+		class Statement;
+		class ResultSet : public dk::ResultSet {
+		protected:
+			Statement & getStatement() { return (Statement&)stmt; }
+		public:
+			virtual ~ResultSet();
+			ResultSet(IStatement &stmt);
+			void getColumn(std::string &v, const IField &f) override;
+			void getColumn(double &v, const IField &f) override;
+			void getColumn(int64_t &v, const IField &f) override;
+			bool next() override;
+		};
+
+		class Statement : public dk::Statement {
+			friend class ResultSet;
+		private:
+			sqlite3_stmt * stmt;
+			Connection &getConnection() { return (Connection&)conn; }
+		public:
+			Statement(IConnection &conn) : dk::Statement(conn),stmt(0) {}
+			size_t executeUpdate() override;
+			~Statement();
+			void reset();
+			void finalize();
+			void flush() override;
+			void query(const std::string &sql);
+			std::unique_ptr<IResultSet> executeQuery() override;
+			bool execute() override;
+			virtual void bind(const std::int64_t &v, IField &f) override;
+			virtual void bind(const double &v, IField &f) override;
+			virtual void bind(const std::string &v, IField &f) override;
+		};
+
+		inline ResultSet::ResultSet(IStatement &stmt) : dk::ResultSet(stmt) {}
+
+		Connection::~Connection() {
+			close();
+		}
+		
+		Connection::Connection(const std::string &db, int flags) : flags(flags) {
+			mdata = std::make_unique<dk::sqlite::MetaData>(*this);
+			open(db);
+			enableExtensions();
+		}
+
 		MetaData::MetaData(IConnection &conn) : dk::MetaData(conn) {}
 		bool step_(sqlite3_stmt *stmt) {
 			assert(stmt);
@@ -56,12 +136,6 @@ namespace dk {
 
 		void Connection::open(const std::string &db) {
 			this->db = db;
-/*			int flags;
-			if (readonly) {
-				flags = SQLITE_OPEN_READONLY;
-			}
-			else
-				flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE;*/
 			int rtn = sqlite3_open_v2(db.c_str(), &DB, flags, 0);
 			int i = 0;
 			while (rtn == SQLITE_LOCKED && i < 60) {
@@ -149,10 +223,7 @@ namespace dk {
 			if (v.empty())
 				rc = sqlite3_bind_null(stmt, f.getColumn());
 			else {
-//				char *ptr=static_cast<char*>(f.getBuff(v.length()));
-//				std::copy(v.begin(), v.end(), ptr);
-//				rc = sqlite3_bind_text(stmt, f.getColumn(), ptr, (int)v.length(), 0);
-				auto &buff = f.getBuff2(v.length());
+				auto &buff = f.getScratch(v.length());
 				std::copy(v.begin(), v.end(), buff.begin());
 				rc = sqlite3_bind_text(stmt, f.getColumn(), buff.data(), (int)v.length(), 0);
 			}

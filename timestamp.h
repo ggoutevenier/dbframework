@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ctime>
+#include <cstring>
+#include <cstdint>
 #ifdef _DEBUG
 #include <string>
 #include <sstream>
@@ -15,7 +17,9 @@ namespace dk {
 		//		time_t t;
 		struct tm t;
 	public:
-		timestamp() { memset(&t, 0, sizeof(t)); }
+		timestamp() : t{0} {
+//			memset(&t, 0, sizeof(t));
+		}
 		timestamp(const tm &a) {
 			*this = a;
 		}
@@ -31,7 +35,6 @@ namespace dk {
 				a.t.tm_sec < b.t.tm_sec ? true : false;
 		}
 		void as_tm(tm &a) const {
-			//			memcpy(&a, gmtime(&t), sizeof(tm));
 			memcpy(&a, &t, sizeof(a));
 		}
 		void operator=(const tm &a) {

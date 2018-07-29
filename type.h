@@ -1,14 +1,16 @@
 #pragma once
 #include "interface.h"
-#include "store.h"
+#include "ref.h"
 
 namespace dk {
 	template<class T>
 	class Type : public IType {
 	protected:
-		virtual T &typed(void *v) const { return *(T *)v; }
+		virtual T &typed(void *v) const {
+			return *static_cast<T *>(v);
+		}
 		virtual const T &typed(const void *v) const {
-			return *(const T *)v;
+			return *static_cast<const T *>(v);
 		}
 	public:
 		virtual ~Type() {}
@@ -73,17 +75,15 @@ namespace dk {
 	};
 
 	template<class T>
-	class Type < Ref<T> > : public IType {
+	class Type <Ref<T>> : public IType { // can it inherit from type<T>
 		typedef typename T::key_type K;
 		typedef Ref<T> R;
 	protected:
-		K & typed(void *v) const {
-			R &r = *(R*)data;
-			return r;
+		K &typed(void *data) const {
+			return *static_cast<R*>(data);
 		}
-		const K &typed(const void *v) const {
-			const R &r = *(const R*)data;
-			return r;
+		const K &typed(const void *data) const {
+			return *static_cast<const R*>(data);
 		}
 	public:
 		void set(IStatement &writer, const  void *data, IField &field) const override {
@@ -97,9 +97,8 @@ namespace dk {
 		}
 
 		bool resolve(Store &store, void *data) const override {
-			R &r = *(R*)data;
-//			r.ptr = reference<T>(store, (K&)r); // defined in store.h
-			store.reference(r);
+			auto &r = *static_cast<R*>(data);
+			r.resolve(getMap<T>(store));
 			return r.ptr != 0;
 		}
 		

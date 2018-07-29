@@ -1,5 +1,5 @@
 #pragma once
-#include "interface.h"
+//#include "interface.h"
 #include "function.h"
 #include "xform.h"
 
@@ -18,10 +18,6 @@ namespace dk {
 		const void *adjust(const void *data) const {
 			return ((char*)data) + offset;
 		}
-/*		template<class S, typename ...ARGS>
-		void xForm(ARGS&&... args) {
-			type = std::unique_ptr<IType>(new S(std::forward<ARGS>(args)...));
-		}*/
 		template<class S, typename ...ARGS>
 		void xForm(ARGS&&... args) {
 			type = std::unique_ptr<IType>(new XForm<S>(std::forward<ARGS>(args)...));
@@ -30,7 +26,7 @@ namespace dk {
 	public:
 		FieldBase(size_t offset, const std::string &name, int column) :
 			offset(offset), name(name), column(column) {}
-		~FieldBase() {}
+		virtual ~FieldBase() {}
 		std::string getName() const override { return name; }
 		void set(IStatement &writer, const  void *data) override {
 			assert(type.get());
@@ -51,11 +47,8 @@ namespace dk {
 			return type->dataType(metadata, *this);
 		}
 		int getColumn() const { return column; }
-		void *getBuff(size_t size) override {
-			buff.resize(size);
-			return buff.data();
-		}
-		std::vector<char> &getBuff2(size_t size) override {
+
+		std::vector<char> &getScratch(size_t size) override {
 			buff.resize(size);
 			return buff;
 		}
@@ -96,66 +89,11 @@ namespace dk {
 			return *this;
 		}
 	};
-
-/*	template<class T>
-	class Field<Ref<T> > : public FieldBase {
-	public:
-		Field(size_t offset, const std::string &name, int column) :
-			FieldBase(offset, name, column)
-		{
-			this->type = std::unique_ptr<IType>(new Type<Ref<T>>());
-			//FieldBase::xForm<Type<T> >();
-		}
-		~Field() {}
-	};*/
-
-/*	template<>
-	class Field<bool> : public FieldBase {
-		using T = bool;
-	public:
-		Field(size_t offset, const std::string &name, int column) :
-			FieldBase(offset, name, column)
-		{
-
-			FieldBase::xForm<Type<T> >();
-		}
-		~Field() {}
-		Field<T> &boolVal(const char *TF) {
-			FieldBase::xForm<XForm<T> >(TF);
-			return *this;
-		}
-	};*/
-
-/*	template<size_t N>
-	class Field<dec::decimal<N> > : public FieldBase {
-		using T = dec::decimal<N>;
-	public:
-		Field(size_t offset, const std::string &name, int column) :
-			FieldBase(offset, name, column)
-		{
-//			this->type = std::unique_ptr<IType>(new XForm<T>());
-			FieldBase::xForm<XForm<T> >();
-		}
-		~Field() {}
-	};
-*/
-/*	template<>
-	class Field<timestamp > : public FieldBase {
-		using T = timestamp;
-	public:
-		Field(size_t offset, const std::string &name, int column) :
-			FieldBase(offset, name, column)
-		{
-//			this->type = std::unique_ptr<IType>(new XForm<timestamp>());
-			FieldBase::xForm<XForm<T> >();
-		}
-		~Field() {}
-	};*/
-
+	
 	template<>
 	class Field<Sequence > : public FieldBase {
 		using T = Sequence;
-		T sequence;
+		T sequence,increment;
 	public:
 		Field(size_t offset, const std::string &name, int column) :
 			FieldBase(offset, name, column)
@@ -165,16 +103,16 @@ namespace dk {
 		void get(IResultSet &reader, void *data) override {
 			Sequence &seq = *static_cast<Sequence *>(adjust(data));
 			seq = sequence;
-			sequence++;
+			sequence+=increment;
 			for (auto &v : others) //populate others
 				v->get(reader, data);
 		}
 		Field &startWith(const T::type &v) {
-			sequence.startWith(v);
+			sequence = Sequence(v);
 			return *this;
 		}
-		Field &increaseBy(const T::type &v) {
-			sequence.increaseBy(v);
+		Field &increamentBy(const T::type &v) {
+			increment = Sequence(v);
 			return *this;
 		}
 		~Field() {}

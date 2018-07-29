@@ -1,6 +1,6 @@
 #pragma once
 #include "sequence.h"
-#include "ref.h"
+//#include "ref.h"
 #include "decimal.h"
 #include "timestamp.h"
 #include <array>
@@ -9,11 +9,18 @@
 #include <cassert>
 #include <string>
 #include <cstdint>
+#include <memory>
+#include <map>
 
 namespace dk {
 	class IField;
 	class Store;
 	class IRecord;
+	template<class T>
+	const std::map<typename T::key_type, T> &getMap(Store &s);
+
+//	template<class T>
+//	const std::map<typename T::key_type, T> &getMap(const Store &s);
 
 	class IMetaData {
 	protected:
@@ -110,10 +117,10 @@ namespace dk {
 		virtual const char *dataType(const IMetaData &metadata) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual int getColumn() const = 0;
-		virtual void *getBuff(size_t size) = 0;
-		virtual std::vector<char> &getBuff2(size_t size) = 0;
+		virtual std::vector<char> &getScratch(size_t size) = 0;
 		virtual void other(std::shared_ptr<IField> &other) = 0;
 		virtual bool is_selectable() const = 0;
+		virtual ~IField() {}
 	};
 
 	class IRecord {
@@ -125,6 +132,6 @@ namespace dk {
 		virtual bool resolve(Store &store, void *data) const = 0;
 		virtual const Fields &getFields() const = 0;
 		virtual std::string getName() const = 0;
+		virtual ~IRecord() {}
 	};
-
 }

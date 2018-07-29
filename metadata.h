@@ -1,23 +1,17 @@
 #pragma once
 #include "record.h"
 namespace dk {
-	template<class TT>
-	class metadata : protected Record {
-		using T = TT;
-		T t;
-		metadata();
+	template<class T>
+	class metadata : public Record , public T {
 		template<class S>
 		Field<S> &add(S &s, const std::string &name) {
-			return Record::add(t, s, name);
+			return Record::add(static_cast<const T&>(*this), s, name);
 		}
 		Field<const logic::Function<T> *> &add(const logic::Function<T> *&f) {
-			return Record::add(t, f);
+			return Record::add(static_cast<const T&>(*this), f);
 		}
 
 	public:
-		static const Record &record() { //not thread safe
-			static metadata<T> rtn;
-			return rtn;
-		}
+		metadata();
 	};
 }
