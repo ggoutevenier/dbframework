@@ -24,9 +24,9 @@ namespace dk {
 			}
 		public:
 			static const Function<T> *getFunction(const K &key) {
-				auto &v = getInstance();
-				auto it = v.m_.find(key);
-				if (it == v.m_.end()) return 0;
+				auto &m = getInstance().m_;
+				auto it = m.find(key);
+				if (it == m.end()) return 0;
 				return it->second.get();
 			}
 		};
