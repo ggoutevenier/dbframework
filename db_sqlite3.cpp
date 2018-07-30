@@ -61,7 +61,8 @@ namespace dk {
 			sqlite3_stmt * stmt;
 			Connection &getConnection() { return (Connection&)conn; }
 		public:
-			Statement(IConnection &conn) : dk::Statement(conn),stmt(0) {}
+			Statement(IConnection &conn) :
+				dk::Statement(conn),stmt(0) {}
 			size_t executeUpdate() override;
 			~Statement();
 			void reset();
@@ -75,7 +76,8 @@ namespace dk {
 			virtual void bind(const std::string &v, IField &f) override;
 		};
 
-		inline ResultSet::ResultSet(IStatement &stmt) : dk::ResultSet(stmt) {}
+		inline ResultSet::ResultSet(IStatement &stmt) :
+				dk::ResultSet(stmt) {}
 
 		Connection::~Connection() {
 			close();
@@ -87,7 +89,8 @@ namespace dk {
 			enableExtensions();
 		}
 
-		MetaData::MetaData(IConnection &conn) : dk::MetaData(conn) {}
+		MetaData::MetaData(IConnection &conn) :
+				dk::MetaData(conn) {}
 		bool step_(sqlite3_stmt *stmt) {
 			assert(stmt);
 			int rtn = sqlite3_step(stmt);

@@ -14,7 +14,12 @@ namespace dk {
 			M m_;
 			template<class S>
 			void add() {
-				m_.insert(typename M::value_type(S::getId(), std::make_unique<S>()));
+				m_.insert(
+					typename M::value_type(
+						S::getId(),
+						std::make_unique<S>()
+					)
+				);
 			}
 
 			Functions(); // must be defined in custom cpp code compile in main project
