@@ -5,6 +5,8 @@
 
 namespace dk {
 	template<class T> class XForm : public Type<T> {};
+
+
 	template<size_t N>
 	class XForm<dec::decimal<N> > : public Type<double> {
 	public:
@@ -46,6 +48,7 @@ namespace dk {
 			t = (src == TF.at(0));
 		}
 	};
+
 	template<>
 	class XForm<timestamp> : public Type<tm> {
 		typedef timestamp T;

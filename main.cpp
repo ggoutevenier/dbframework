@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
 	try {
 		// define object store using a sqlite database
 		Store store(
-				sqlite::make_connection("/home/gerard/shape.db", SQLITE_OPEN_READONLY)
+			sqlite::make_connection("/home/gerard/shape.db", SQLITE_OPEN_READONLY)
 		);
 		
 		// print out all shapes and there area based off of data stored 
@@ -37,7 +37,8 @@ int main(int argc, char *argv[]) {
 			std::cout 
 				<< shape->shapeName 
 				<< " : " 
-				<< shape->type->logic->area(*shape) 
+//				<< shape->type->logic->area(*shape)
+				<< shape->area()
 				<< std::endl;
 		}
 	}

@@ -35,9 +35,9 @@ namespace dk {
 		private:
 			Connection & getConnection() { return (Connection&)conn; }
 		protected:
-			const char *dataType(const std::int64_t &, const IField  &f) const override;
-			const char *dataType(const double &, const IField   &f) const override;
-			const char *dataType(const std::string &, const IField  &f) const override;
+			const std::string typeInt64(const IField  &f) const override;
+			const std::string typeDouble(const IField   &f) const override;
+			const std::string typeString(const IField  &f) const override;
 		public:
 			virtual ~MetaData() {}
 			MetaData(IConnection &conn);
@@ -257,9 +257,9 @@ namespace dk {
 			}
 		}
 
-		const char *MetaData::dataType(const std::int64_t &, const IField &f) const { return "BIGINT"; }
-		const char *MetaData::dataType(const double &, const IField &f) const { return "DOUBLE"; }
-		const char *MetaData::dataType(const std::string &, const IField &f) const {return "Text";}
+		const std::string MetaData::typeInt64(const IField &f) const { return "BIGINT"; }
+		const std::string MetaData::typeDouble(const IField &f) const { return "DOUBLE"; }
+		const std::string MetaData::typeString(const IField &f) const {return "Text";}
 
 		ResultSet::~ResultSet() {
 			getStatement().reset();

@@ -19,31 +19,67 @@ namespace dk {
 	template<class T>
 	const std::map<typename T::key_type, T> &getMap(Store &s);
 
-//	template<class T>
-//	const std::map<typename T::key_type, T> &getMap(const Store &s);
-
 	class IMetaData {
 	protected:
-		virtual const char *dataType(const bool &, const IField &f) const = 0;
-		virtual const char *dataType(const int16_t &, const IField &f) const = 0;
-		virtual const char *dataType(const int32_t &, const IField &f) const = 0;
-		virtual const char *dataType(const int64_t &, const IField &f) const = 0;
-		virtual const char *dataType(const uint16_t &, const IField &f) const = 0;
-		virtual const char *dataType(const uint32_t &, const IField &f) const = 0;
-		virtual const char *dataType(const uint64_t &, const IField &f) const = 0;
-		virtual const char *dataType(const float &, const IField &f) const = 0;
-		virtual const char *dataType(const double &, const IField &f) const = 0;
-		virtual const char *dataType(const std::string &, const IField &f) const = 0;
-		virtual const char *dataType(const struct tm &, const IField &f) const = 0;
+		virtual const std::string typeBool(const IField &f) const = 0;
+		virtual const std::string typeInt16(const IField &f) const = 0;
+		virtual const std::string typeInt32(const IField &f) const = 0;
+		virtual const std::string typeInt64(const IField &f) const = 0;
+		virtual const std::string typeFloat(const IField &f) const = 0;
+		virtual const std::string typeDouble(const IField &f) const = 0;
+		virtual const std::string typeString(const IField &f) const = 0;
+		virtual const std::string typeDate(const IField &f) const = 0;
 	public:
 		virtual ~IMetaData() {}
 		virtual std::string selectSQL(const IRecord &record) const = 0;
 		virtual std::string insertSQL(const IRecord &record) const = 0;
 		virtual std::string createSQL(const IRecord &record) const = 0;
-		template<class T>
-		const char *dataType(const IField &f) const { return dataType(T(), f); }
+		template<class T> const std::string type(const IField &f) const;
 	};
 
+	template<> inline const std::string IMetaData::type<bool>(const IField &f) const {
+		return typeBool(f);
+	}
+
+	template<> inline const std::string IMetaData::type<int16_t>(const IField &f) const {
+		return typeInt16(f);
+	}
+
+	template<> inline const std::string IMetaData::type<int32_t>(const IField &f) const {
+		return typeInt32(f);
+	}
+
+	template<> inline const std::string IMetaData::type<int64_t>(const IField &f) const {
+		return typeInt64(f);
+	}
+
+	template<> inline const std::string IMetaData::type<uint16_t>(const IField &f) const {
+		return typeInt16(f);
+	}
+
+	template<> inline const std::string IMetaData::type<uint32_t>(const IField &f) const {
+		return typeInt32(f);
+	}
+
+	template<> inline const std::string IMetaData::type<uint64_t>(const IField &f) const {
+		return typeInt64(f);
+	}
+
+	template<> inline const std::string IMetaData::type<float>(const IField &f) const {
+		return typeFloat(f);
+	}
+
+	template<> inline const std::string IMetaData::type<double>(const IField &f) const {
+		return typeDouble(f);
+	}
+
+	template<> inline const std::string IMetaData::type<std::string>(const IField &f) const {
+		return typeString(f);
+	}
+
+	template<> inline const std::string IMetaData::type<struct tm>(const IField &f) const {
+		return typeInt16(f);
+	}
 
 	class IResultSet {
 	protected:
@@ -104,7 +140,7 @@ namespace dk {
 		virtual ~IType() {}
 		virtual void set(IStatement &writer, const  void *data, IField &field) const = 0;
 		virtual void get(IResultSet &reader, void *data, IField &field) const = 0;
-		virtual const char *dataType(const IMetaData &mdata, const IField &field) const = 0;
+		virtual const std::string type(const IMetaData &mdata, const IField &field) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual bool is_selectable() const = 0;
 	};
@@ -114,7 +150,7 @@ namespace dk {
 		virtual std::string getName() const = 0;
 		virtual void set(IStatement &writer, const  void *data) = 0;
 		virtual void get(IResultSet &reader, void *data) = 0;
-		virtual const char *dataType(const IMetaData &metadata) const = 0;
+		virtual const std::string type(const IMetaData &metadata) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual int getColumn() const = 0;
 		virtual std::vector<char> &getScratch(size_t size) = 0;

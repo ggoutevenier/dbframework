@@ -62,6 +62,9 @@ namespace dk {
 			Ref<layout::ShapeType> type; 
 			
 			std::array<double, 5> atttribute;
+			double area() const {
+				return type->logic->area(*this);
+			}
 		};
 	}
 }

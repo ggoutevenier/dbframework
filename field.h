@@ -11,7 +11,7 @@ namespace dk {
 		std::vector<char> buff;
 	protected:
 		std::list<std::shared_ptr<IField> > others;
-		std::unique_ptr<IType> type;
+		std::unique_ptr<IType> type_;
 		void *adjust(void *data) const {
 			return ((char*)data) + offset;
 		}
@@ -20,7 +20,7 @@ namespace dk {
 		}
 		template<class S, typename ...ARGS>
 		void xForm(ARGS&&... args) {
-			type = std::unique_ptr<IType>(new XForm<S>(std::forward<ARGS>(args)...));
+			type_ = std::unique_ptr<IType>(new XForm<S>(std::forward<ARGS>(args)...));
 		}
 
 	public:
@@ -29,22 +29,22 @@ namespace dk {
 		virtual ~FieldBase() {}
 		std::string getName() const override { return name; }
 		void set(IStatement &writer, const  void *data) override {
-			assert(type.get());
-			type->set(writer, adjust(data), *this);
+			assert(type_.get());
+			type_->set(writer, adjust(data), *this);
 		}
 		void get(IResultSet &reader, void *data) override {
-			assert(type.get());
-			type->get(reader, adjust(data), *this);
+			assert(type_.get());
+			type_->get(reader, adjust(data), *this);
 			for (auto &v : others) //populate others
 				v->get(reader, data);
 		}
 		bool resolve(Store &store, void *data) const override {
-			assert(type.get());
-			return type->resolve(store, adjust(data));
+			assert(type_.get());
+			return type_->resolve(store, adjust(data));
 		}
-		const char *dataType(const IMetaData &metadata) const override {
-			assert(type.get());
-			return type->dataType(metadata, *this);
+		const std::string type(const IMetaData &metadata) const override {
+			assert(type_.get());
+			return type_->type(metadata, *this);
 		}
 		int getColumn() const { return column; }
 
@@ -58,7 +58,7 @@ namespace dk {
 			others.push_back(o);
 		}
 		bool is_selectable() const override {
-			return type->is_selectable();
+			return type_->is_selectable();
 		}
 	};
 

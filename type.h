@@ -28,11 +28,11 @@ namespace dk {
 		) const override {
 			reader.getColumn(typed(data), field);
 		}
-		const char *dataType(
+		const std::string type(
 			const IMetaData &mdata,
 			const IField &field
-		) const {
-			return mdata.dataType<T>(field);
+		) const override {
+			return mdata.type<T>(field);
 		}
 		bool resolve(Store &, void *data) const override {
 			return true;
@@ -60,11 +60,11 @@ namespace dk {
 		) const override { //show never call Field<Sequence>::get should handle
 			assert(false);
 		}
-		const char *dataType(
+		const std::string type(
 			const IMetaData &mdata,
 			const IField &field
-		) const {
-			return Type<Sequence::type>::dataType(mdata, field);
+		) const override {
+			return Type<Sequence::type>::type(mdata, field);
 		}
 		bool resolve(Store &, void *data) const override {
 			return true;
@@ -92,8 +92,8 @@ namespace dk {
 		void get(IResultSet &reader, void *data, IField &field) const override {
 			//noop
 		}
-		const char *dataType(const IMetaData &mdata, const IField &field) const {
-			return 0;
+		const std::string type(const IMetaData &mdata, const IField &field) const {
+			return std::string();
 		}
 
 		bool resolve(Store &store, void *data) const override {

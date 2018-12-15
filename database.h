@@ -8,16 +8,14 @@ namespace dk {
 	class MetaData : public IMetaData{
 	protected:
 		IConnection &conn;
-		const char *dataType(const bool &, const IField &f) const override;
-		const char *dataType(const int16_t &, const IField &f) const override;
-		const char *dataType(const int32_t &, const IField &f) const override;
-		const char *dataType(const int64_t &, const IField &f) const override;
-		const char *dataType(const uint16_t &, const IField &f) const override;
-		const char *dataType(const uint32_t &, const IField &f) const override;
-		const char *dataType(const uint64_t &, const IField &f) const override;
-		const char *dataType(const float &, const IField &f) const override;
-		const char *dataType(const double &, const IField &f) const override;
-		const char *dataType(const struct tm &, const IField &f) const override;
+		const std::string typeBool(const IField &f) const override;
+		const std::string typeInt16(const IField &f) const override;
+		const std::string typeInt32(const IField &f) const override;
+		const std::string typeInt64(const IField &f) const override;
+		const std::string typeFloat(const IField &f) const override;
+		const std::string typeDouble(const IField &f) const override;
+		const std::string typeString(const IField &f) const override;
+		const std::string typeDate(const IField &f) const override;
 //		virtual const char *dataType(const std::string &, const IField  &f) const =0;
 	public:
 		MetaData(IConnection &c) : conn(c) {}
@@ -54,10 +52,10 @@ namespace dk {
 	protected:
 		IConnection &conn;
 		std::string sql;
-
+		template<class S,class T> void bind_(const T &t, IField &f);
 		template<class T> void bindString(const T &t, IField &f);
-		template<class T> void bindInt64(const T &t, IField &f);
-		void bindDouble(const float &t, IField &f);
+//		template<class T> void bindInt64(const T &t, IField &f);
+//		void bindDouble(const float &t, IField &f);
 	public:
 		Statement(IConnection &conn) :conn(conn) {}
 		virtual ~Statement() {}
@@ -89,53 +87,43 @@ namespace dk {
 	};
 
 	/****************************************** Metadata ***************************/
-	inline const char *MetaData::dataType(const bool &, const IField &f)
+	inline const std::string MetaData::typeBool(const IField &f)
 		const {
-		return IMetaData::dataType<int64_t>(f);
+		return IMetaData::type<int64_t>(f);
 	}
-	inline const char *MetaData::dataType(const int16_t &, const IField &f)
+	inline const std::string MetaData::typeInt16(const IField &f)
 		const {
-		return IMetaData::dataType<int64_t>(f);
-	}
-
-	inline const char *MetaData::dataType(const int32_t &, const IField &f)
-		const {
-		return IMetaData::dataType<int64_t>(f);
+		return IMetaData::type<int64_t>(f);
 	}
 
-	inline const char *MetaData::dataType(const int64_t &, const IField &f)
+	inline const std::string MetaData::typeInt32(const IField &f)
 		const {
-		return IMetaData::dataType<std::string>(f);
+		return IMetaData::type<int64_t>(f);
 	}
 
-	inline const char *MetaData::dataType(const uint16_t &, const IField &f)
+	inline const std::string MetaData::typeInt64(const IField &f)
 		const {
-		return IMetaData::dataType<int64_t>(f);
+		return IMetaData::type<std::string>(f);
+	}
+
+	inline const std::string MetaData::typeFloat(const IField &f)
+		const {
+		return IMetaData::type<double>(f);
+	}
+
+	inline const std::string MetaData::typeDouble(const IField &f)
+		const {
+		return IMetaData::type<std::string>(f);
 	}
 	
-	inline const char *MetaData::dataType(const uint32_t &, const IField &f)
+	inline const std::string MetaData::typeDate(const IField &f)
 		const {
-		return IMetaData::dataType<int64_t>(f);
-	}
-	
-	inline const char *MetaData::dataType(const uint64_t &, const IField &f)
-		const {
-		return IMetaData::dataType<int64_t>(f);
+		return IMetaData::type<std::string>(f);
 	}
 
-	inline const char *MetaData::dataType(const float &, const IField &f)
+	inline const std::string MetaData::typeString(const IField &f)
 		const {
-		return IMetaData::dataType<double>(f);
-	}
-
-	inline const char *MetaData::dataType(const double &, const IField &f)
-		const {
-		return IMetaData::dataType<std::string>(f);
-	}
-	
-	inline const char *MetaData::dataType(const struct tm &, const IField &f)
-		const {
-		return IMetaData::dataType<std::string>(f);
+		return IMetaData::type<std::string>(f);
 	}
 
 	inline std::string MetaData::selectSQL(const IRecord &record) const {
@@ -180,7 +168,7 @@ namespace dk {
 		for (const std::unique_ptr<IField> &field : record.getFields()) {
 			if (!first) ss << ",";
 			else first = false;
-			ss << field->getName() << " " << field->dataType(*this);
+			ss << field->getName() << " " << field->type(*this);
 		}
 		ss << ")";
 		return ss.str();
@@ -239,6 +227,10 @@ namespace dk {
 	}
 
 	/****************************************** Statement ***************************/
+	template<class S,class T>
+	inline void Statement::bind_(const T &t, IField &f) {
+		bind( boost::lexical_cast<S>(t),f);
+	}
 
 	template<class T>
 	inline void Statement::bindString(const T &t, IField &f) {
@@ -247,15 +239,15 @@ namespace dk {
 //		bind(boost::lexical_cast<std::string>(t), f);
 	}
 
-	template<class T>
+/*	template<class T>
 	inline void Statement::bindInt64(const T &t, IField &f) {
 		bind(boost::lexical_cast<int64_t>(t), f);
 	}
 	
 	inline void Statement::bindDouble(const float &t, IField &f) {
 		bind(boost::lexical_cast<double>(t), f);
-	}
-	inline void Statement::bind(const float &v, IField &f) { bindDouble(v, f); }
+	}*/
+/*	inline void Statement::bind(const float &v, IField &f) { bindDouble(v, f); }
 	inline void Statement::bind(const bool &v, IField &f) { bindInt64(v, f); }
 	inline void Statement::bind(const std::int16_t &v, IField &f) { bindInt64(v, f); }
 	inline void Statement::bind(const std::int32_t &v, IField &f) { bindInt64(v, f); }
@@ -265,6 +257,18 @@ namespace dk {
 	inline void Statement::bind(const std::uint64_t &v, IField &f) { bindString(v, f); }
 	inline void Statement::bind(const double &v, IField &f) { bindString(v, f); };
 	inline void Statement::bind(const char &v, IField &f) { bindString(v, f); };
+*/
+	inline void Statement::bind(const float &v, IField &f) { bind_<double>(v, f); }
+	inline void Statement::bind(const bool &v, IField &f) { bind_<int16_t>(v, f); }
+	inline void Statement::bind(const std::int16_t &v, IField &f) { bind_<int32_t>(v, f); }
+	inline void Statement::bind(const std::int32_t &v, IField &f) { bind_<int64_t>(v, f); }
+	inline void Statement::bind(const std::int64_t &v, IField &f) { bindString(v, f); }
+	inline void Statement::bind(const std::uint16_t &v, IField &f) { bind_<int32_t>(v, f); };
+	inline void Statement::bind(const std::uint32_t &v, IField &f) { bind_<int64_t>(v, f); }
+	inline void Statement::bind(const std::uint64_t &v, IField &f) { bindString(v, f); }
+	inline void Statement::bind(const double &v, IField &f) { bindString(v, f); };
+	inline void Statement::bind(const char &v, IField &f) { bindString(v, f); };
+
 	static std::string toString(const tm &data) {
 		char dt[60];
 		sprintf(
