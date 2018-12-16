@@ -17,11 +17,11 @@ namespace dk {
 				return shape.atttribute.at(1);
 			}
 		public:
-			// overriden interface area function
+			// Override interface area function
 			double area(const layout::Shape &shape) const override{
 				return getBase(shape)*getHeight(shape)/2;
 			}
-			// pull key_type def from layout
+			// pull key_type definition from layout
 			static auto getId() { return layout::ShapeType::key_type(1); }
 		};
 

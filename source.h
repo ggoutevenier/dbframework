@@ -58,7 +58,7 @@ namespace dk {
 					)
 				);
 			}
-			stmt->bind(u, *fields.at(pos).get());
+			stmt->set(u, *fields.at(pos).get());
 		}
 		template<typename U, typename... Args>
 		void bind(U first, Args... args) {

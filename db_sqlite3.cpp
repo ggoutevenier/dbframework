@@ -49,9 +49,9 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-			void getColumn(std::string &v, const IField &f) override;
-			void getColumn(double &v, const IField &f) override;
-			void getColumn(int64_t &v, const IField &f) override;
+			void get(std::string &v, const IField &f) override;
+			void get(double &v, const IField &f) override;
+			void get(int64_t &v, const IField &f) override;
 			bool next() override;
 		};
 
@@ -71,9 +71,9 @@ namespace dk {
 			void query(const std::string &sql);
 			std::unique_ptr<IResultSet> executeQuery() override;
 			bool execute() override;
-			virtual void bind(const std::int64_t &v, IField &f) override;
-			virtual void bind(const double &v, IField &f) override;
-			virtual void bind(const std::string &v, IField &f) override;
+			virtual void set(const std::int64_t &v, IField &f) override;
+			virtual void set(const double &v, IField &f) override;
+			virtual void set(const std::string &v, IField &f) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) :
@@ -220,7 +220,7 @@ namespace dk {
 			}
 		}
 
-		void Statement::bind(const std::string &v, IField &f) {
+		void Statement::set(const std::string &v, IField &f) {
 			int rc;
 			
 			if (v.empty())
@@ -236,7 +236,7 @@ namespace dk {
 			}
 		}
 
-		void Statement::bind(const std::int64_t &v, IField &f) {
+		void Statement::set(const std::int64_t &v, IField &f) {
 			int rc;
 			rc = sqlite3_bind_int64(stmt, f.getColumn(), v);
 
@@ -247,7 +247,7 @@ namespace dk {
 		}
 
 
-		void Statement::bind(const double &v, IField &f) {
+		void Statement::set(const double &v, IField &f) {
 			int rc;
 			rc = sqlite3_bind_double(stmt, f.getColumn(), v);
 
@@ -265,13 +265,13 @@ namespace dk {
 			getStatement().reset();
 		}
 
-		void ResultSet::getColumn(double &v, const IField &f) {
+		void ResultSet::get(double &v, const IField &f) {
 			v = sqlite3_column_double(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::getColumn(int64_t &v, const IField &f) {
+		void ResultSet::get(int64_t &v, const IField &f) {
 			v = sqlite3_column_int64(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::getColumn(std::string &v, const IField &f) {
+		void ResultSet::get(std::string &v, const IField &f) {
 			const char *c= (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
 			if (!c)
 				v.clear();

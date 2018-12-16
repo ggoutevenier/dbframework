@@ -66,9 +66,9 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-			void getColumn(std::string &v, const IField &f) override;
-			void getColumn(double &v, const IField &f) override;
-			void getColumn(int64_t &v, const IField &f) override;
+			virtual void get(std::string &v, const IField &f) override;
+			virtual void get(double &v, const IField &f) override;
+			virtual void get(int64_t &v, const IField &f) override;
 			bool next() override;
 		};
 
@@ -85,9 +85,9 @@ namespace dk {
 			void query(const std::string &sql);
 			std::unique_ptr<IResultSet> executeQuery() override;
 			bool execute() override;
-			virtual void bind(const std::int64_t &v, IField &f) override;
-			virtual void bind(const double &v, IField &f) override;
-			virtual void bind(const std::string &v, IField &f) override;
+			virtual void set(const std::int64_t &v, IField &f) override;
+			virtual void set(const double &v, IField &f) override;
+			virtual void set(const std::string &v, IField &f) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) : dk::ResultSet(stmt) {
@@ -168,15 +168,15 @@ namespace dk {
 			flush();
 		}
 
-		void Statement::bind(const std::string &v, IField &f) {
+		void Statement::set(const std::string &v, IField &f) {
 			stmt->setString(f.getColumn(), v);
 		}
 
-		void Statement::bind(const std::int64_t &v, IField &f) {
+		void Statement::set(const std::int64_t &v, IField &f) {
 			stmt->setInt(f.getColumn(), v);
 		}
 
-		void Statement::bind(const double &v, IField &f) {
+		void Statement::set(const double &v, IField &f) {
 			stmt->setDouble(f.getColumn(), v);
 		}
 
@@ -187,13 +187,13 @@ namespace dk {
 		ResultSet::~ResultSet() {
 		}
 
-		void ResultSet::getColumn(double &v, const IField &f) {
+		void ResultSet::get(double &v, const IField &f) {
 			v = rset->getDouble(f.getColumn());
 		}
-		void ResultSet::getColumn(int64_t &v, const IField &f) {
+		void ResultSet::get(int64_t &v, const IField &f) {
 			v = rset->getInt64(f.getColumn());
 		}
-		void ResultSet::getColumn(std::string &v, const IField &f) {
+		void ResultSet::get(std::string &v, const IField &f) {
 			v = rset->getString(f.getColumn());
 		}
 	}

@@ -19,14 +19,14 @@ namespace dk {
 			const  void *data,
 			IField &field
 		) const override {
-			writer.bind(typed(data), field);
+			writer.set(typed(data), field);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
 			IField &field
 		) const override {
-			reader.getColumn(typed(data), field);
+			reader.get(typed(data), field);
 		}
 		const std::string type(
 			const IMetaData &mdata,

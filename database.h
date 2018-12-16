@@ -34,45 +34,45 @@ namespace dk {
 	public:
 		virtual ~ResultSet() {}
 		ResultSet(IStatement &stmt) :stmt(stmt) {}
-		virtual void getColumn(std::string &v, const IField &f) = 0;
-		void getColumn(float &v, const IField &f) override;
-		void getColumn(double &v, const IField &f) override;
-		void getColumn(char &v, const IField &f) override;
-		void getColumn(bool &v, const IField &f) override;
-		void getColumn(int16_t &v, const IField &f) override;
-		void getColumn(int32_t &v, const IField &f) override;
-		void getColumn(int64_t &v, const IField &f) override;
-		void getColumn(uint16_t &v, const IField &f) override;
-		void getColumn(uint32_t &v, const IField &f) override;
-		void getColumn(uint64_t &v, const IField &f) override;
-		void getColumn(struct tm &v, const IField &f) override;
+		virtual void get(std::string &v, const IField &f) = 0;
+		virtual void get(float &v, const IField &f) override;
+		virtual void get(double &v, const IField &f) override;
+		virtual void get(char &v, const IField &f) override;
+		virtual void get(bool &v, const IField &f) override;
+		virtual void get(int16_t &v, const IField &f) override;
+		virtual void get(int32_t &v, const IField &f) override;
+		virtual void get(int64_t &v, const IField &f) override;
+		virtual void get(uint16_t &v, const IField &f) override;
+		virtual void get(uint32_t &v, const IField &f) override;
+		virtual void get(uint64_t &v, const IField &f) override;
+		virtual void get(struct tm &v, const IField &f) override;
 	};
 
 	class Statement : public IStatement {
 	protected:
 		IConnection &conn;
 		std::string sql;
-		template<class S,class T> void bind_(const T &t, IField &f);
-		template<class T> void bindString(const T &t, IField &f);
-//		template<class T> void bindInt64(const T &t, IField &f);
-//		void bindDouble(const float &t, IField &f);
+		template<class S,class T> void set_(const T &t, IField &f);
+		template<class T> void setString(const T &t, IField &f);
+//		template<class T> void setInt64(const T &t, IField &f);
+//		void setDouble(const float &t, IField &f);
 	public:
 		Statement(IConnection &conn) :conn(conn) {}
 		virtual ~Statement() {}
 		void commit() override;
-//		void bind_array_size(unsigned int) override {};
-		void bind(const float &v, IField &f) override;
-		void bind(const bool &v, IField &f) override;
-		void bind(const std::int16_t &v, IField &f) override;
-		void bind(const std::int32_t &v, IField &f) override;
-		void bind(const std::int64_t &v, IField &f) override;
-		void bind(const std::uint16_t &v, IField &f) override;
-		void bind(const std::uint32_t &v, IField &f) override;
-		void bind(const std::uint64_t &v, IField &f) override;
-		void bind(const double &v, IField &f) override;
-		void bind(const char &v, IField &f) override;
-		void bind(const struct tm &v, IField &f) override;
-		virtual void bind(const std::string &v, IField &f) override =0;
+//		void set_array_size(unsigned int) override {};
+		void set(const float &v, IField &f) override;
+		void set(const bool &v, IField &f) override;
+		void set(const std::int16_t &v, IField &f) override;
+		void set(const std::int32_t &v, IField &f) override;
+		void set(const std::int64_t &v, IField &f) override;
+		void set(const std::uint16_t &v, IField &f) override;
+		void set(const std::uint32_t &v, IField &f) override;
+		void set(const std::uint64_t &v, IField &f) override;
+		void set(const double &v, IField &f) override;
+		void set(const char &v, IField &f) override;
+		void set(const struct tm &v, IField &f) override;
+		virtual void set(const std::string &v, IField &f) override =0;
 	};
 
 	class Connection : public IConnection {
@@ -178,7 +178,7 @@ namespace dk {
 	template<class T>
 	inline void ResultSet::getString(T &t, const IField &f) {
 		std::string str;
-		getColumn(str, f);
+		get(str, f);
 		if (!str.empty())
 			t = boost::lexical_cast<T>(str);
 	}
@@ -186,25 +186,25 @@ namespace dk {
 	template<class T>
 	inline void ResultSet::getInt64(T &t, const IField &f) {
 		int64_t i;
-		getColumn(i, f);
+		get(i, f);
 		t = boost::lexical_cast<T>(i);
 	}
 	
 	inline void ResultSet::getDouble(float &t, const IField &f) {
 		double d;
-		getColumn(d, f);
+		get(d, f);
 		t = boost::lexical_cast<float>(d);
 	}
-	inline void ResultSet::getColumn(float &v, const IField &f) { getDouble(v, f); }
-	inline void ResultSet::getColumn(double &v, const IField &f) { v = 0; getString(v, f); }
-	inline void ResultSet::getColumn(char &v, const IField &f) { v = 0; getString(v, f); }
-	inline void ResultSet::getColumn(bool &v, const IField &f) { getInt64(v, f); }
-	inline void ResultSet::getColumn(int16_t &v, const IField &f) { getInt64(v, f); }
-	inline void ResultSet::getColumn(int32_t &v, const IField &f) { getInt64(v, f); }
-	inline void ResultSet::getColumn(int64_t &v, const IField &f) { v = 0; getString(v, f); }
-	inline void ResultSet::getColumn(uint16_t &v, const IField &f) { getInt64(v, f); };
-	inline void ResultSet::getColumn(uint32_t &v, const IField &f) { getInt64(v, f); }
-	inline void ResultSet::getColumn(uint64_t &v, const IField &f) { v = 0; getString(v, f); }
+	inline void ResultSet::get(float &v, const IField &f) { getDouble(v, f); }
+	inline void ResultSet::get(double &v, const IField &f) { v = 0; getString(v, f); }
+	inline void ResultSet::get(char &v, const IField &f) { v = 0; getString(v, f); }
+	inline void ResultSet::get(bool &v, const IField &f) { getInt64(v, f); }
+	inline void ResultSet::get(int16_t &v, const IField &f) { getInt64(v, f); }
+	inline void ResultSet::get(int32_t &v, const IField &f) { getInt64(v, f); }
+	inline void ResultSet::get(int64_t &v, const IField &f) { v = 0; getString(v, f); }
+	inline void ResultSet::get(uint16_t &v, const IField &f) { getInt64(v, f); };
+	inline void ResultSet::get(uint32_t &v, const IField &f) { getInt64(v, f); }
+	inline void ResultSet::get(uint64_t &v, const IField &f) { v = 0; getString(v, f); }
 
 	static void fromString(const std::string str, tm &data) {
 		data.tm_hour = data.tm_min = data.tm_sec = 0;
@@ -220,54 +220,54 @@ namespace dk {
 		mktime(&data);
 	}
 
-	inline void ResultSet::getColumn(struct tm &v, const IField &f) {
+	inline void ResultSet::get(struct tm &v, const IField &f) {
 		std::string str;
-		getColumn(str, f);
+		get(str, f);
 		fromString(str, v);
 	}
 
 	/****************************************** Statement ***************************/
 	template<class S,class T>
-	inline void Statement::bind_(const T &t, IField &f) {
-		bind( boost::lexical_cast<S>(t),f);
+	inline void Statement::set_(const T &t, IField &f) {
+		set( boost::lexical_cast<S>(t),f);
 	}
 
 	template<class T>
-	inline void Statement::bindString(const T &t, IField &f) {
+	inline void Statement::setString(const T &t, IField &f) {
 		std::string str = boost::lexical_cast<std::string>(t);
-		bind(str, f);
-//		bind(boost::lexical_cast<std::string>(t), f);
+		set(str, f);
+//		set(boost::lexical_cast<std::string>(t), f);
 	}
 
 /*	template<class T>
-	inline void Statement::bindInt64(const T &t, IField &f) {
-		bind(boost::lexical_cast<int64_t>(t), f);
+	inline void Statement::setInt64(const T &t, IField &f) {
+		set(boost::lexical_cast<int64_t>(t), f);
 	}
 	
-	inline void Statement::bindDouble(const float &t, IField &f) {
-		bind(boost::lexical_cast<double>(t), f);
+	inline void Statement::setDouble(const float &t, IField &f) {
+		set(boost::lexical_cast<double>(t), f);
 	}*/
-/*	inline void Statement::bind(const float &v, IField &f) { bindDouble(v, f); }
-	inline void Statement::bind(const bool &v, IField &f) { bindInt64(v, f); }
-	inline void Statement::bind(const std::int16_t &v, IField &f) { bindInt64(v, f); }
-	inline void Statement::bind(const std::int32_t &v, IField &f) { bindInt64(v, f); }
-	inline void Statement::bind(const std::int64_t &v, IField &f) { bindString(v, f); }
-	inline void Statement::bind(const std::uint16_t &v, IField &f) { bindInt64(v, f); };
-	inline void Statement::bind(const std::uint32_t &v, IField &f) { bindInt64(v, f); }
-	inline void Statement::bind(const std::uint64_t &v, IField &f) { bindString(v, f); }
-	inline void Statement::bind(const double &v, IField &f) { bindString(v, f); };
-	inline void Statement::bind(const char &v, IField &f) { bindString(v, f); };
+/*	inline void Statement::set(const float &v, IField &f) { setDouble(v, f); }
+	inline void Statement::set(const bool &v, IField &f) { setInt64(v, f); }
+	inline void Statement::set(const std::int16_t &v, IField &f) { setInt64(v, f); }
+	inline void Statement::set(const std::int32_t &v, IField &f) { setInt64(v, f); }
+	inline void Statement::set(const std::int64_t &v, IField &f) { setString(v, f); }
+	inline void Statement::set(const std::uint16_t &v, IField &f) { setInt64(v, f); };
+	inline void Statement::set(const std::uint32_t &v, IField &f) { setInt64(v, f); }
+	inline void Statement::set(const std::uint64_t &v, IField &f) { setString(v, f); }
+	inline void Statement::set(const double &v, IField &f) { setString(v, f); };
+	inline void Statement::set(const char &v, IField &f) { setString(v, f); };
 */
-	inline void Statement::bind(const float &v, IField &f) { bind_<double>(v, f); }
-	inline void Statement::bind(const bool &v, IField &f) { bind_<int16_t>(v, f); }
-	inline void Statement::bind(const std::int16_t &v, IField &f) { bind_<int32_t>(v, f); }
-	inline void Statement::bind(const std::int32_t &v, IField &f) { bind_<int64_t>(v, f); }
-	inline void Statement::bind(const std::int64_t &v, IField &f) { bindString(v, f); }
-	inline void Statement::bind(const std::uint16_t &v, IField &f) { bind_<int32_t>(v, f); };
-	inline void Statement::bind(const std::uint32_t &v, IField &f) { bind_<int64_t>(v, f); }
-	inline void Statement::bind(const std::uint64_t &v, IField &f) { bindString(v, f); }
-	inline void Statement::bind(const double &v, IField &f) { bindString(v, f); };
-	inline void Statement::bind(const char &v, IField &f) { bindString(v, f); };
+	inline void Statement::set(const float &v, IField &f) { set_<double>(v, f); }
+	inline void Statement::set(const bool &v, IField &f) { set_<int16_t>(v, f); }
+	inline void Statement::set(const std::int16_t &v, IField &f) { set_<int32_t>(v, f); }
+	inline void Statement::set(const std::int32_t &v, IField &f) { set_<int64_t>(v, f); }
+	inline void Statement::set(const std::int64_t &v, IField &f) { setString(v, f); }
+	inline void Statement::set(const std::uint16_t &v, IField &f) { set_<int32_t>(v, f); };
+	inline void Statement::set(const std::uint32_t &v, IField &f) { set_<int64_t>(v, f); }
+	inline void Statement::set(const std::uint64_t &v, IField &f) { setString(v, f); }
+	inline void Statement::set(const double &v, IField &f) { setString(v, f); };
+	inline void Statement::set(const char &v, IField &f) { setString(v, f); };
 
 	static std::string toString(const tm &data) {
 		char dt[60];
@@ -283,9 +283,9 @@ namespace dk {
 		);
 		return dt;
 	}
-	inline void Statement::bind(const struct tm &v, IField &f) {
+	inline void Statement::set(const struct tm &v, IField &f) {
 		std::string str = toString(v);
-		bindString(str, f);
+		setString(str, f);
 	};
 	inline void Statement::commit() { conn.commit(); }
 
