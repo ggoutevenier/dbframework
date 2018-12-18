@@ -43,7 +43,7 @@ namespace dk {
 		};
 		int pos;
 		std::list<std::string> conditions;
-		std::map<int,std::unique_ptr<IField> > fields; 
+		std::map<int,std::unique_ptr<IColumn> > fields; 
 		template<typename U>
 		void bind(const U u) {
 			++pos;
@@ -51,7 +51,7 @@ namespace dk {
 				fields.insert(
 					decltype(fields)::value_type(
 						pos,
-						std::make_unique<Field<U> >(
+						std::make_unique<Column<U> >(
 							-1,
 							":" + std::to_string(pos),
 							pos)

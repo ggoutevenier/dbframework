@@ -1,22 +1,22 @@
 #pragma once
-#include "field.h"
+#include "column.h"
 
 namespace dk {
 	class Record : public IRecord {
 	private:
 		std::string name;
-		Fields fields, refs;
+		Columns columns, refs;
 		template<class B, class T>
 		size_t getOffset(B &b, T &t) {
 			return (size_t)&t - (size_t)&b;
 		}
 		ResolveFunc resolveFunc_;
-		std::unique_ptr<IField> logic_;
+		std::unique_ptr<IColumn> logic_;
 	public:
 		Record(const Record &)=delete;
 		Record(Record &&record) noexcept :
 			name(std::move(record.name)),
-			fields(std::move(record.fields)),
+			columns(std::move(record.columns)),
 			refs(std::move(record.refs)),
 			resolveFunc_(std::move(record.resolveFunc_)),
 			logic_(std::move(record.logic_)){
@@ -28,57 +28,57 @@ namespace dk {
 		) : name(name), resolveFunc_(f) {}
 		~Record() {}
 		template<class B, class T>
-		Field<const logic::Function<T> *> &add(B &b, const logic::Function<T> *&t) {
+		Column<const logic::Function<T> *> &add(B &b, const logic::Function<T> *&t) {
 			logic_ =
-				std::make_unique<Field<const logic::Function<T> *> >(
+				std::make_unique<Column<const logic::Function<T> *> >(
 					getOffset(b, t),
-					(int)fields.size() + 1);
-			return *(Field<const logic::Function<T> *>*)logic_.get();
+					(int)columns.size() + 1);
+			return *(Column<const logic::Function<T> *>*)logic_.get();
 		}
 		template<class B, class T>
-		Field<T> &add(B &b, T &t, const std::string &name) {
-			IField *ptr = 0;
-			for (auto &v : fields) {// replace with std::find_if
-				if (name == v->getName()) {
-					ptr = v.get();
+		Column<T> &add(B &b, T &t, const std::string &name) {
+			IColumn *ptr = 0;
+			for (auto &column : columns) {// replace with std::find_if
+				if (name == column->getName()) {
+					ptr = column.get();
 					break;
 				}
 			}
 			if (ptr) {
-				std::shared_ptr<IField> fld =
-					std::make_shared<Field<T> >(getOffset(b, t), name, 0); // check on casting/auto
+				std::shared_ptr<IColumn> fld =
+					std::make_shared<Column<T> >(getOffset(b, t), name, 0); // check on casting/auto
 
 				ptr->other(fld);
 			}
 			else {
-				fields.push_back( // check on emplace
-					std::make_unique<Field<T> >(
+				columns.push_back( // check on emplace
+					std::make_unique<Column<T> >(
 						getOffset(b, t),
 						name,
-						(int)fields.size() + 1)
+						(int)columns.size() + 1)
 				);
 			}
-			return *(Field<T>*)fields.back().get(); // might have race condition
+			return *(Column<T>*)columns.back().get(); // might have race condition
 		}
 
 		template<class B, class T>
-		Field<Ref<T> > &add(B &b, Ref<T> &t, const std::string &name) {
+		Column<Ref<T> > &add(B &b, Ref<T> &t, const std::string &name) {
 			refs.push_back( // check on emplace
-				std::make_unique<Field<Ref<T> > >(
+				std::make_unique<Column<Ref<T> > >(
 					getOffset(b, t),
 					name,
 					(int)refs.size() + 1)
 			);
-			return *(Field<Ref<T> >*)refs.back().get(); // might have race condition
+			return *(Column<Ref<T> >*)refs.back().get(); // might have race condition
 		}
 
 		void set(IStatement &writer, const  void *data) const override {
-			for (const auto &field : fields) //check on for_each lambdas
-				field->set(writer, data);
+			for (const auto &column : columns) //check on for_each lambdas
+				column->set(writer, data);
 		}
 		void get(IResultSet &reader, void *data) const override {
-			for (const auto &field : fields)
-				field->get(reader, data);
+			for (const auto &column : columns)
+				column->get(reader, data);
 		}
 		bool resolve(Store &store, void *data) const override {
 			bool rtn = true;
@@ -91,7 +91,7 @@ namespace dk {
 			}
 			return rtn;
 		}
-		const Fields &getFields() const override { return fields; }
+		const Columns &getColumns() const override { return columns; }
 		std::string getName() const override { return name; }
 	};
 }

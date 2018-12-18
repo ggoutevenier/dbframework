@@ -17,20 +17,20 @@ namespace dk {
 		void set(
 			IStatement &writer,
 			const  void *data,
-			IField &field
+			IColumn &field
 		) const override {
 			writer.set(typed(data), field);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
-			IField &field
+			IColumn &field
 		) const override {
 			reader.get(typed(data), field);
 		}
 		const std::string type(
 			const IMetaData &mdata,
-			const IField &field
+			const IColumn &field
 		) const override {
 			return mdata.type<T>(field);
 		}
@@ -49,20 +49,20 @@ namespace dk {
 		void set(
 			IStatement &writer,
 			const  void *data,
-			IField &field
+			IColumn &field
 		) const override {
 			Type<Sequence::type>::set(writer, data, field);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
-			IField &field
+			IColumn &field
 		) const override { //show never call Field<Sequence>::get should handle
 			assert(false);
 		}
 		const std::string type(
 			const IMetaData &mdata,
-			const IField &field
+			const IColumn &field
 		) const override {
 			return Type<Sequence::type>::type(mdata, field);
 		}
@@ -86,13 +86,13 @@ namespace dk {
 			return *static_cast<const R*>(data);
 		}
 	public:
-		void set(IStatement &writer, const  void *data, IField &field) const override {
+		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			//noop
 		}
-		void get(IResultSet &reader, void *data, IField &field) const override {
+		void get(IResultSet &reader, void *data, IColumn &field) const override {
 			//noop
 		}
-		const std::string type(const IMetaData &mdata, const IField &field) const {
+		const std::string type(const IMetaData &mdata, const IColumn &field) const {
 			return std::string();
 		}
 

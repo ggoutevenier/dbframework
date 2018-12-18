@@ -1,5 +1,10 @@
 #pragma once
 #include <map>
+/**
+ * Used to resolve a pointer the underlying data given the key to the data
+ * The type T is the class of the data.  The class should be derive from the key_type
+ * The key_type must be type defined inside the class
+ */
 
 namespace dk {
 	template<class T>

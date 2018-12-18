@@ -35,9 +35,9 @@ namespace dk {
 		private:
 			Connection & getConnection() { return (Connection&)conn; }
 		protected:
-			const std::string typeInt64(const IField  &f) const override;
-			const std::string typeDouble(const IField   &f) const override;
-			const std::string typeString(const IField  &f) const override;
+			const std::string typeInt64(const IColumn  &f) const override;
+			const std::string typeDouble(const IColumn   &f) const override;
+			const std::string typeString(const IColumn  &f) const override;
 		public:
 			virtual ~MetaData() {}
 			MetaData(IConnection &conn);
@@ -49,9 +49,9 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-			void get(std::string &v, const IField &f) override;
-			void get(double &v, const IField &f) override;
-			void get(int64_t &v, const IField &f) override;
+			void get(std::string &v, const IColumn &f) override;
+			void get(double &v, const IColumn &f) override;
+			void get(int64_t &v, const IColumn &f) override;
 			bool next() override;
 		};
 
@@ -71,9 +71,9 @@ namespace dk {
 			void query(const std::string &sql);
 			std::unique_ptr<IResultSet> executeQuery() override;
 			bool execute() override;
-			virtual void set(const std::int64_t &v, IField &f) override;
-			virtual void set(const double &v, IField &f) override;
-			virtual void set(const std::string &v, IField &f) override;
+			virtual void set(const std::int64_t &v, IColumn &f) override;
+			virtual void set(const double &v, IColumn &f) override;
+			virtual void set(const std::string &v, IColumn &f) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) :
@@ -220,7 +220,7 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const std::string &v, IField &f) {
+		void Statement::set(const std::string &v, IColumn &f) {
 			int rc;
 			
 			if (v.empty())
@@ -236,7 +236,7 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const std::int64_t &v, IField &f) {
+		void Statement::set(const std::int64_t &v, IColumn &f) {
 			int rc;
 			rc = sqlite3_bind_int64(stmt, f.getColumn(), v);
 
@@ -247,7 +247,7 @@ namespace dk {
 		}
 
 
-		void Statement::set(const double &v, IField &f) {
+		void Statement::set(const double &v, IColumn &f) {
 			int rc;
 			rc = sqlite3_bind_double(stmt, f.getColumn(), v);
 
@@ -257,21 +257,21 @@ namespace dk {
 			}
 		}
 
-		const std::string MetaData::typeInt64(const IField &f) const { return "BIGINT"; }
-		const std::string MetaData::typeDouble(const IField &f) const { return "DOUBLE"; }
-		const std::string MetaData::typeString(const IField &f) const {return "Text";}
+		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
+		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
+		const std::string MetaData::typeString(const IColumn &f) const {return "Text";}
 
 		ResultSet::~ResultSet() {
 			getStatement().reset();
 		}
 
-		void ResultSet::get(double &v, const IField &f) {
+		void ResultSet::get(double &v, const IColumn &f) {
 			v = sqlite3_column_double(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::get(int64_t &v, const IField &f) {
+		void ResultSet::get(int64_t &v, const IColumn &f) {
 			v = sqlite3_column_int64(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::get(std::string &v, const IField &f) {
+		void ResultSet::get(std::string &v, const IColumn &f) {
 			const char *c= (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
 			if (!c)
 				v.clear();

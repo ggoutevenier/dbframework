@@ -13,7 +13,7 @@
 #include <map>
 
 namespace dk {
-	class IField;
+	class IColumn;
 	class Store;
 	class IRecord;
 	template<class T>
@@ -21,20 +21,20 @@ namespace dk {
 
 	class IMetaData {
 	protected:
-		virtual const std::string typeBool(const IField &f) const = 0;
-		virtual const std::string typeInt16(const IField &f) const = 0;
-		virtual const std::string typeInt32(const IField &f) const = 0;
-		virtual const std::string typeInt64(const IField &f) const = 0;
-		virtual const std::string typeFloat(const IField &f) const = 0;
-		virtual const std::string typeDouble(const IField &f) const = 0;
-		virtual const std::string typeString(const IField &f) const = 0;
-		virtual const std::string typeDate(const IField &f) const = 0;
+		virtual const std::string typeBool(const IColumn &f) const = 0;
+		virtual const std::string typeInt16(const IColumn &f) const = 0;
+		virtual const std::string typeInt32(const IColumn &f) const = 0;
+		virtual const std::string typeInt64(const IColumn &f) const = 0;
+		virtual const std::string typeFloat(const IColumn &f) const = 0;
+		virtual const std::string typeDouble(const IColumn &f) const = 0;
+		virtual const std::string typeString(const IColumn &f) const = 0;
+		virtual const std::string typeDate(const IColumn &f) const = 0;
 	public:
 		virtual ~IMetaData() {}
 		virtual std::string selectSQL(const IRecord &record) const = 0;
 		virtual std::string insertSQL(const IRecord &record) const = 0;
 		virtual std::string createSQL(const IRecord &record) const = 0;
-		template<class T> const std::string type(const IField &f) const;
+		template<class T> const std::string type(const IColumn &f) const;
 	};
 
 
@@ -44,18 +44,18 @@ namespace dk {
 	public:
 		virtual ~IResultSet() {}
 		virtual bool next() = 0;
-		virtual void get(float &v, const IField &f) = 0;
-		virtual void get(double &v, const IField &f) = 0;
-		virtual void get(char &v, const IField &f) = 0;
-		virtual void get(bool &v, const IField &f) = 0;
-		virtual void get(int16_t &v, const IField &f) = 0;
-		virtual void get(int32_t &v, const IField &f) = 0;
-		virtual void get(int64_t &v, const IField &f) = 0;
-		virtual void get(uint16_t &v, const IField &f) = 0;
-		virtual void get(uint32_t &v, const IField &f) = 0;
-		virtual void get(uint64_t &v, const IField &f) = 0;
-		virtual void get(std::string &v, const IField &f) = 0;
-		virtual void get(struct tm &v, const IField &f) = 0;
+		virtual void get(float &v, const IColumn &f) = 0;
+		virtual void get(double &v, const IColumn &f) = 0;
+		virtual void get(char &v, const IColumn &f) = 0;
+		virtual void get(bool &v, const IColumn &f) = 0;
+		virtual void get(int16_t &v, const IColumn &f) = 0;
+		virtual void get(int32_t &v, const IColumn &f) = 0;
+		virtual void get(int64_t &v, const IColumn &f) = 0;
+		virtual void get(uint16_t &v, const IColumn &f) = 0;
+		virtual void get(uint32_t &v, const IColumn &f) = 0;
+		virtual void get(uint64_t &v, const IColumn &f) = 0;
+		virtual void get(std::string &v, const IColumn &f) = 0;
+		virtual void get(struct tm &v, const IColumn &f) = 0;
 	};
 
 	class IStatement {
@@ -68,18 +68,18 @@ namespace dk {
 		virtual size_t executeUpdate() = 0;
 		virtual void flush() = 0;
 		virtual void query(const std::string &sql) = 0;
-		virtual void set(const float &v, IField &f) = 0;
-		virtual void set(const bool &v, IField &f) = 0;
-		virtual void set(const std::int16_t &v, IField &f) = 0;
-		virtual void set(const std::int32_t &v, IField &f) = 0;
-		virtual void set(const std::int64_t &v, IField &f) = 0;
-		virtual void set(const std::uint16_t &v, IField &f) = 0;
-		virtual void set(const std::uint32_t &v, IField &f) = 0;
-		virtual void set(const std::uint64_t &v, IField &f) = 0;
-		virtual void set(const double &v, IField &f) = 0;
-		virtual void set(const char &v, IField &f) = 0;
-		virtual void set(const std::string &v, IField &f) = 0;
-		virtual void set(const struct tm &v, IField &f) = 0;
+		virtual void set(const float &v, IColumn &f) = 0;
+		virtual void set(const bool &v, IColumn &f) = 0;
+		virtual void set(const std::int16_t &v, IColumn &f) = 0;
+		virtual void set(const std::int32_t &v, IColumn &f) = 0;
+		virtual void set(const std::int64_t &v, IColumn &f) = 0;
+		virtual void set(const std::uint16_t &v, IColumn &f) = 0;
+		virtual void set(const std::uint32_t &v, IColumn &f) = 0;
+		virtual void set(const std::uint64_t &v, IColumn &f) = 0;
+		virtual void set(const double &v, IColumn &f) = 0;
+		virtual void set(const char &v, IColumn &f) = 0;
+		virtual void set(const std::string &v, IColumn &f) = 0;
+		virtual void set(const struct tm &v, IColumn &f) = 0;
 	};
 
 	class IConnection {
@@ -96,14 +96,14 @@ namespace dk {
 	class IType {
 	public:
 		virtual ~IType() {}
-		virtual void set(IStatement &writer, const  void *data, IField &field) const = 0;
-		virtual void get(IResultSet &reader, void *data, IField &field) const = 0;
-		virtual const std::string type(const IMetaData &mdata, const IField &field) const = 0;
+		virtual void set(IStatement &writer, const  void *data, IColumn &field) const = 0;
+		virtual void get(IResultSet &reader, void *data, IColumn &field) const = 0;
+		virtual const std::string type(const IMetaData &mdata, const IColumn &field) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual bool is_selectable() const = 0;
 	};
 
-	class IField {
+	class IColumn {
 	public:
 		virtual std::string getName() const = 0;
 		virtual void set(IStatement &writer, const  void *data) = 0;
@@ -112,64 +112,64 @@ namespace dk {
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual int getColumn() const = 0;
 		virtual std::vector<char> &getScratch(size_t size) = 0;
-		virtual void other(std::shared_ptr<IField> &other) = 0;
+		virtual void other(std::shared_ptr<IColumn> &other) = 0;
 		virtual bool is_selectable() const = 0;
-		virtual ~IField() {}
+		virtual ~IColumn() {}
 	};
 
 	class IRecord {
 	public:
-		using Fields = std::list<std::unique_ptr<IField> >;
+		using Columns = std::list<std::unique_ptr<IColumn> >;
 		using ResolveFunc = bool(*)(Store&, void*);
 		virtual void set(IStatement &writer, const  void *data) const = 0;
 		virtual void get(IResultSet &reader, void *data) const = 0;
 		virtual bool resolve(Store &store, void *data) const = 0;
-		virtual const Fields &getFields() const = 0;
+		virtual const Columns &getColumns() const = 0;
 		virtual std::string getName() const = 0;
 		virtual ~IRecord() {}
 	};
 
-	template<> inline const std::string IMetaData::type<bool>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<bool>(const IColumn &f) const {
 		return typeBool(f);
 	}
 
-	template<> inline const std::string IMetaData::type<int16_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<int16_t>(const IColumn &f) const {
 		return typeInt16(f);
 	}
 
-	template<> inline const std::string IMetaData::type<int32_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<int32_t>(const IColumn &f) const {
 		return typeInt32(f);
 	}
 
-	template<> inline const std::string IMetaData::type<int64_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<int64_t>(const IColumn &f) const {
 		return typeInt64(f);
 	}
 
-	template<> inline const std::string IMetaData::type<uint16_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<uint16_t>(const IColumn &f) const {
 		return typeInt16(f);
 	}
 
-	template<> inline const std::string IMetaData::type<uint32_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<uint32_t>(const IColumn &f) const {
 		return typeInt32(f);
 	}
 
-	template<> inline const std::string IMetaData::type<uint64_t>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<uint64_t>(const IColumn &f) const {
 		return typeInt64(f);
 	}
 
-	template<> inline const std::string IMetaData::type<float>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<float>(const IColumn &f) const {
 		return typeFloat(f);
 	}
 
-	template<> inline const std::string IMetaData::type<double>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<double>(const IColumn &f) const {
 		return typeDouble(f);
 	}
 
-	template<> inline const std::string IMetaData::type<std::string>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<std::string>(const IColumn &f) const {
 		return typeString(f);
 	}
 
-	template<> inline const std::string IMetaData::type<struct tm>(const IField &f) const {
+	template<> inline const std::string IMetaData::type<struct tm>(const IColumn &f) const {
 		return typeInt16(f);
 	}
 }
