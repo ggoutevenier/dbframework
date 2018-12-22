@@ -87,21 +87,20 @@ namespace dk {
 
 	template<>
 	class Column<bool> : public ColumnBase {
-		using T = bool;
 	public:
 		Column(size_t offset, const std::string &name, int column) :
 			ColumnBase(offset, name, column)
 		{
-			ColumnBase::xForm<T>();
+			ColumnBase::xForm<bool>();
 		}
 		~Column() {}
-		Column<T> &boolVal(const char *TF) {
+		Column<bool> &boolVal(const char *TF) {
 			std::array<char, 2> tf = { TF[0],TF[1] };
-			ColumnBase::xForm<T>(tf);
+			ColumnBase::xForm<bool>(tf);
 			return *this;
 		}
 	};
-	
+
 	template<>
 	class Column<Sequence > : public ColumnBase {
 		using T = Sequence;

@@ -3,31 +3,31 @@
 #include "type.h"
 #include <string>
 /**
- * Xform is used to transforam data from a specific from into another defined by the
+ * xForm is used to transform data from a specific from into another defined by the
  * template parameter.
  *
  * This class is used to transform the data after it is read from the database and
  * before it is put into the C++ class
  */
 namespace dk {
-	template<class T> class XForm : public Type<T> {};
+	template<class T> class XForm : public Type<T>{};
 
 
-	template<size_t N>
-	class XForm<dec::decimal<N> > : public Type<double> {
+	template<int N>
+	class XForm<dec::decimal<N> > : public Type<std::string> {
 	public:
 		XForm() {}
 		~XForm() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			auto &t = *static_cast<const dec::decimal<N>*>(data);
-			double src = t.getAsDouble();
-			Type<double>::set(writer, &src, field);
+			std::string src = dec::toString(t);
+			Type<std::string>::set(writer, &src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			double src;
+			std::string src;
 			auto &t = *static_cast<dec::decimal<N>*>(data);
-			Type<double>::get(reader, &src, field);
-			t = src;
+			Type<std::string>::get(reader, &src, field);
+			dec::fromString(src,t);
 		}
 	};
 
@@ -49,7 +49,7 @@ namespace dk {
 			auto &t = *static_cast<bool*>(data);
 			Type<char>::get(reader, &src, field);
 			if (!(src == TF.at(0) || src == TF.at(1) || src == 0)) {
-				//convertion error
+				//Conversion error
 			}
 			t = (src == TF.at(0));
 		}

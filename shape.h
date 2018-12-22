@@ -4,6 +4,7 @@
 #include <set>
 #include "ref.h"
 #include "function.h"
+#include "decimal.h"
 
 namespace dk {
 	// define keys for tables
@@ -61,7 +62,7 @@ namespace dk {
 			// row based on value in field type.type_id
 			Ref<layout::ShapeType> type; 
 			
-			std::array<double, 5> atttribute;
+			std::array<dec::decimal<7>, 5> atttribute;
 			double area() const {
 				return type->logic->area(*this);
 			}

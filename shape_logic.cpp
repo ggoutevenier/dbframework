@@ -11,10 +11,10 @@ namespace dk {
 		protected:
 			// private helper functions
 			double getBase(const layout::Shape &shape) const {
-				return shape.atttribute.at(0);
+				return shape.atttribute.at(0).getAsDouble();
 			}
 			double getHeight(const layout::Shape &shape) const {
-				return shape.atttribute.at(1);
+				return shape.atttribute.at(1).getAsDouble();
 			}
 		public:
 			// Override interface area function
@@ -28,10 +28,10 @@ namespace dk {
 		class Rectangle : public Function<layout::ShapeType> {
 		protected:
 			virtual double getLength(const layout::Shape &shape) const {
-				return shape.atttribute.at(0);
+				return shape.atttribute.at(0).getAsDouble();
 			}
 			virtual double getWidth(const layout::Shape &shape) const {
-				return shape.atttribute.at(1);
+				return shape.atttribute.at(1).getAsDouble();
 			}
 		public:
 			double area(const layout::Shape &shape) const {
@@ -44,7 +44,7 @@ namespace dk {
 		class Square : public Rectangle {
 		protected:
 			double getWidth(const layout::Shape &shape) const override {
-				return shape.atttribute.at(0);
+				return shape.atttribute.at(0).getAsDouble();
 			}
 		public:
 			using key_type = Rectangle::key_type;
@@ -55,7 +55,7 @@ namespace dk {
 		protected:
 			static const double pi;
 			double getRadius(const layout::Shape &shape) const {
-				return shape.atttribute.at(0);
+				return shape.atttribute.at(0).getAsDouble();
 			}
 		public:
 
