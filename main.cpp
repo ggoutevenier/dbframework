@@ -1,4 +1,5 @@
 #include "db_sqlite3.h"
+#include "db_mysql.h"
 #include <sqlite3.h>
 #include "store.h"
 #include "shape.h" 
@@ -29,17 +30,30 @@ int main(int argc, char *argv[]) {
 		Store store(
 			sqlite::make_connection("/home/gerard/shape.db", SQLITE_OPEN_READONLY)
 		);
-		
-		// print out all shapes and there area based off of data stored 
-		// in database and logic defined in shape_logic
+		{
+			std::shared_ptr<IConnection>  dst =
+					mysql::make_connection(
+							"gerard",
+							"localhost",
+							"gerard",
+							"a46384");
 
-		for (layout::Shape const *shape : store.projection<layout::Shape>()) {
-			std::cout 
-				<< shape->shapeName 
-				<< " : " 
-//				<< shape->type->logic->area(*shape)
-				<< shape->area()
-				<< std::endl;
+//				= sqlite::make_connection(
+//						"/home/gerard/shape2.db",
+//						SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE);
+
+//		Sink<layout::Shape> sink(dst);
+
+			for (layout::Shape const *shape : store.projection<layout::Shape>()) {
+//				sink.push_back(*shape);
+				std::cout
+					<< shape->shapeName
+					<< " : "
+	//				<< shape->type->logic->area(*shape)
+					<< shape->area()
+					<< std::endl;
+			}
+			store.save(dst);
 		}
 	}
 	catch (std::exception &e) {

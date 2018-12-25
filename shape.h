@@ -57,7 +57,7 @@ namespace dk {
 
 		struct Shape : key::Shape {
 			using key_type = key::Shape;
-			std::string shapeName;
+char shapeName[64];//			std::string shapeName;
 			// the following fields resolves to the appropriate ShapeType 
 			// row based on value in field type.type_id
 			Ref<layout::ShapeType> type; 

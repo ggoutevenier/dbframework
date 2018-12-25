@@ -38,9 +38,11 @@ namespace dk {
 			const std::string typeInt64(const IColumn  &f) const override;
 			const std::string typeDouble(const IColumn   &f) const override;
 			const std::string typeString(const IColumn  &f) const override;
+			std::string bindVar(const std::string name) const override;
 		public:
 			virtual ~MetaData() {}
 			MetaData(IConnection &conn);
+
 		};
 		class Statement;
 		class ResultSet : public dk::ResultSet {
@@ -49,9 +51,10 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-			void get(std::string &v, const IColumn &f) override;
-			void get(double &v, const IColumn &f) override;
-			void get(int64_t &v, const IColumn &f) override;
+			virtual void get(char *v, IColumn &f) override;
+			virtual void get(double &v, IColumn &f) override;
+			virtual void get(int64_t &v, IColumn &f) override;
+//			virtual void get(IColumn &f) override;
 			bool next() override;
 		};
 
@@ -73,7 +76,8 @@ namespace dk {
 			bool execute() override;
 			virtual void set(const std::int64_t &v, IColumn &f) override;
 			virtual void set(const double &v, IColumn &f) override;
-			virtual void set(const std::string &v, IColumn &f) override;
+			virtual void set(const char *v, IColumn &f) override;
+//			virtual void set(const IColumn &f) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) :
@@ -220,13 +224,42 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const std::string &v, IColumn &f) {
+/*		void Statement::set(const IColumn &f) {
+			int rc;
+			auto buff=f.getBuff();
+			if (buff.size()==0)
+				rc = sqlite3_bind_null(stmt, f.getColumn());
+			else {
+				rc = sqlite3_bind_text(stmt, f.getColumn(), buff.data(), (int)buff.size(), 0);
+			}
+			if (rc != SQLITE_OK) {
+				const char *err = sqlite3_errmsg(getConnection().DB);
+				throw std::runtime_error(err);
+			}
+		}*/
+
+		void Statement::set(const char *v, IColumn &f) {
+			int rc;
+			if (v==0)
+				rc = sqlite3_bind_null(stmt, f.getColumn());
+			else {
+				rc = sqlite3_bind_text(stmt, f.getColumn(), v, f.getSize(), 0);
+			}
+			if (rc != SQLITE_OK) {
+				const char *err = sqlite3_errmsg(getConnection().DB);
+				throw std::runtime_error(err);
+			}
+		}
+
+/*		void Statement::set(const std::string &v, IColumn &f) {
 			int rc;
 			
 			if (v.empty())
 				rc = sqlite3_bind_null(stmt, f.getColumn());
 			else {
-				auto &buff = f.getScratch(v.length());
+//				auto &buff = f.getScratch(v.length());
+				auto buff = f.getBuff();
+				buff.resize(v.length());
 				std::copy(v.begin(), v.end(), buff.begin());
 				rc = sqlite3_bind_text(stmt, f.getColumn(), buff.data(), (int)v.length(), 0);
 			}
@@ -234,7 +267,7 @@ namespace dk {
 				const char *err = sqlite3_errmsg(getConnection().DB);
 				throw std::runtime_error(err);
 			}
-		}
+		}*/
 
 		void Statement::set(const std::int64_t &v, IColumn &f) {
 			int rc;
@@ -256,7 +289,7 @@ namespace dk {
 				throw std::runtime_error(err);
 			}
 		}
-
+		std::string MetaData::bindVar(const std::string name) const { return ":"+name;}
 		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
 		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
 		const std::string MetaData::typeString(const IColumn &f) const {return "Text";}
@@ -265,18 +298,35 @@ namespace dk {
 			getStatement().reset();
 		}
 
-		void ResultSet::get(double &v, const IColumn &f) {
+		void ResultSet::get(double &v, IColumn &f) {
 			v = sqlite3_column_double(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::get(int64_t &v, const IColumn &f) {
+		void ResultSet::get(int64_t &v, IColumn &f) {
 			v = sqlite3_column_int64(getStatement().stmt, f.getColumn() - 1);
 		}
-		void ResultSet::get(std::string &v, const IColumn &f) {
-			const char *c= (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
-			if (!c)
-				v.clear();
-			else
-				v = c;;
+//		void ResultSet::get(std::string &v, const IColumn &f) {
+//			const char *c= (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
+//			if (!c)
+//				v.clear();
+//			else
+//				v = c;;
+//		}
+		void ResultSet::get(char *v, IColumn &f) {
+			const char *c;
+			c = (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
+			v[f.getSize()-1]=0;
+			for(size_t i=0;i<f.getSize() && c;i++,c++,v++)
+				*v=*c;
 		}
+
+/*		void ResultSet::get(IColumn &f) {
+			std::string str((const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1));
+			if (str.length()==0)
+				f.getBuff().clear();
+			else {
+				f.getBuff().resize(str.length());
+				std::copy(str.begin(),str.end(),f.getBuff().begin());
+			}
+		}*/
 	}
 }

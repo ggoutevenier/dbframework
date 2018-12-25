@@ -53,7 +53,7 @@ namespace dk {
 						pos,
 						std::make_unique<Column<U> >(
 							-1,
-							":" + std::to_string(pos),
+							conn->getMetaData().bindVar(std::to_string(pos)),
 							pos)
 					)
 				);

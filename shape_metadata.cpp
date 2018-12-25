@@ -51,9 +51,9 @@ insert into shape values (7,'Triangle 1x2',1,1,2,null,null,null);
 		Record("shape") { // shape is the name of the database table
 		// map fields of structure to column names in database
 		add(shapeId, "shape_id");
-		add(shapeName, "shape_name");
+		add(shapeName, "shape_name").setSize(32);
 		add(type.typeId, "shape_type_id");
-		add(atttribute.at(0), "attribute_1");
+		add(atttribute.at(0), "attribute_1").setPrecision(18);
 		add(atttribute.at(1), "attribute_2");
 		add(atttribute.at(2), "attribute_3");
 		add(atttribute.at(3), "attribute_4");
