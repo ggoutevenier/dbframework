@@ -6,27 +6,28 @@ namespace dk {
 	template<class T>
 	class Type : public IType {
 	protected:
-		virtual T &typed(void *v) const {
-			return *static_cast<T *>(v);
-		}
-		virtual const T &typed(const void *v) const {
-			return *static_cast<const T *>(v);
-		}
+//		T &typed(void *v) const {
+//			return *static_cast<T *>(v);
+//		}
+//		const T &typed(const void *v) const {
+//			return *static_cast<const T *>(v);
+//		}
 	public:
+		using XTYPE=T;
 		virtual ~Type() {}
 		void set(
 			IStatement &writer,
 			const  void *data,
 			IColumn &field
 		) const override {
-			writer.set(typed(data), field);
+			writer.set(*static_cast<const T *>(data), field);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
 			IColumn &field
 		) const override {
-			reader.get(typed(data), field);
+			reader.get(*static_cast<T *>(data), field);
 		}
 		const std::string type(
 			const IMetaData &mdata,
@@ -79,12 +80,12 @@ namespace dk {
 		typedef typename T::key_type K;
 		typedef Ref<T> R;
 	protected:
-		K &typed(void *data) const {
+/*		K &typed(void *data) const {
 			return *static_cast<R*>(data);
 		}
 		const K &typed(const void *data) const {
 			return *static_cast<const R*>(data);
-		}
+		}*/
 	public:
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			//noop

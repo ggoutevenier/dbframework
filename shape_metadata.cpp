@@ -38,7 +38,7 @@ insert into shape values (7,'Triangle 1x2',1,1,2,null,null,null);
 	/*mapping of structure to a database table*/
 	template<>
 	metadata<layout::ShapeType> ::metadata() : 
-		Record("shape_type") { // shape_type is the name for the database table
+		RecordBuilder("shape_type") { // shape_type is the name for the database table
 		// map fields of structure to column names in database
 		add(typeId, "shape_type_id");
 		add(typeDesc, "shape_type_desc");
@@ -48,7 +48,7 @@ insert into shape values (7,'Triangle 1x2',1,1,2,null,null,null);
 
 	template<>
 	metadata<layout::Shape> ::metadata() : 
-		Record("shape") { // shape is the name of the database table
+		RecordBuilder("shape") { // shape is the name of the database table
 		// map fields of structure to column names in database
 		add(shapeId, "shape_id");
 		add(shapeName, "shape_name").setSize(32);

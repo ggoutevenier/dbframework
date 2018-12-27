@@ -57,7 +57,6 @@ namespace dk {
 		virtual void get(uint64_t &v, IColumn &f) = 0;
 		virtual void get(struct tm &v, IColumn &f) = 0;
 		virtual void get(Number &v, IColumn &f) = 0;
-//		virtual void get(char &v, IColumn &f) = 0;
 		virtual void get(char *v, IColumn &f) = 0;
 		virtual void get(IColumn &f) = 0;
 	};
@@ -81,9 +80,7 @@ namespace dk {
 		virtual void set(const std::uint32_t &v, IColumn &f) = 0;
 		virtual void set(const std::uint64_t &v, IColumn &f) = 0;
 		virtual void set(const double &v, IColumn &f) = 0;
-//		virtual void set(const char &v, IColumn &f) = 0;
 		virtual void set(const char *v, IColumn &f) = 0;
-//		virtual void set(const std::string &v, IColumn &f) = 0;
 		virtual void set(const struct tm &v, IColumn &f) = 0;
 		virtual void set(const Number &v, IColumn &f) = 0;
 		virtual void set( IColumn &f) = 0;
@@ -118,7 +115,6 @@ namespace dk {
 		virtual const std::string type(const IMetaData &metadata) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual int getColumn() const = 0;
-//		virtual std::vector<char> &getScratch(size_t size) = 0;
 		virtual std::vector<char> &getBuff() = 0;
 		const std::vector<char> &getBuff() const {return const_cast<IColumn*>(this)->getBuff();}
 		virtual void other(std::shared_ptr<IColumn> &other) = 0;
@@ -126,10 +122,8 @@ namespace dk {
 		virtual ~IColumn() {}
 		virtual const IType &getType() const = 0;
 		virtual size_t getSize() const = 0;
-//		virtual IColumn &setSize(size_t size) = 0;
 		virtual int getPrecision() const = 0;
 		virtual int getScale() const = 0;
-//		virtual IColumn &setPrecision(int size) = 0;
 		virtual std::string getDateFormat() const = 0;
 		virtual void toBuff(std::string ) = 0;
 	};
@@ -137,7 +131,6 @@ namespace dk {
 	class IRecord {
 	public:
 		using Columns = std::list<std::unique_ptr<IColumn> >;
-		using ResolveFunc = bool(*)(Store&, void*);
 		virtual void set(IStatement &writer, const  void *data) const = 0;
 		virtual void get(IResultSet &reader, void *data) const = 0;
 		virtual bool resolve(Store &store, void *data) const = 0;

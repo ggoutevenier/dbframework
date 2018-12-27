@@ -10,77 +10,68 @@
  * before it is put into the C++ class
  */
 namespace dk {
-	template<class T> class XForm : public Type<T>{};
+//	template<class T> class XForm : public Type<T>{};
 
 	template<>
-	class XForm<std::string > : public Type<char*> {
+	class Type<std::string > : public Type<char*> {
 	public:
-		XForm() {}
-		~XForm() {}
+		Type() {}
+		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) const override {
-//			auto &v = *static_cast<const std::string*>(data);
 			column.toBuff(*static_cast<const std::string*>(data));
 			writer.set(column);
-/*			auto &buff = column.getBuff();
-			std::copy(v.begin(),v.end(),buff.begin());
-			buff.at(std::min(v.length(),buff.size()-1))=0;
-			auto p = column.getBuff().data();
-			Type<char*>::set(writer, &p, column);*/
 		}
 		void get(IResultSet &reader, void *data, IColumn &column) const override {
 			auto &v = *static_cast<std::string*>(data);
-//			auto buff = column.getBuff().data();
-//			Type<char*>::get(reader,&buff,column);
-//			v = std::string(buff,strlen(buff));
 			reader.get(column);
 			v = column.getBuff().data();
 		}
 	};
 
-	template<>
-	class XForm<char > : public Type<char *> {
-	public:
-		XForm() {}
-		~XForm() {}
-		void set(IStatement &writer, const  void *data, IColumn &column) const override {
-			auto v = static_cast<const char*>(data);
-			Type<char *>::set(writer, v, column);
-		}
-		void get(IResultSet &reader, void *data, IColumn &column) const override {
-			auto v = static_cast<char*>(data);
-			Type<char *>::get(reader,v,column);
-		}
-	};
-
 	template<size_t N>
-	class XForm<char[N] > : public Type<char *> {
+	class Type<char[N] > : public Type<char *> {
 	public:
-		XForm() {}
-		~XForm() {}
+		Type() {}
+		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) const override {
 			auto v = static_cast<const char *>(data);
-			Type<char *>::set(writer, &v, column);
+			Type<XTYPE>::set(writer, &v, column);
 		}
 		void get(IResultSet &reader, void *data, IColumn &column) const override {
 			auto v = static_cast<char *>(data);
-			Type<char *>::get(reader, &v,column);
+			Type<XTYPE>::get(reader, &v,column);
+		}
+	};
+
+	template<>
+	class Type<char > : public Type<char[1]> {
+	public:
+		Type() {}
+		~Type() {}
+		void set(IStatement &writer, const  void *data, IColumn &column) const override {
+			auto v = static_cast<const char*>(data);
+			Type<XTYPE>::set(writer, v, column);
+		}
+		void get(IResultSet &reader, void *data, IColumn &column) const override {
+			auto v = static_cast<char*>(data);
+			Type<XTYPE>::get(reader,v,column);
 		}
 	};
 
 	template<int N>
-	class XForm<dec::decimal<N> > : public Type<Number> {
+	class Type<dec::decimal<N> > : public Type<Number> {
 	public:
-		XForm() {}
-		~XForm() {}
+		Type() {}
+		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			auto &t = *static_cast<const dec::decimal<N>*>(data);
-			Number src(t.getUnbiased(),N);
-			Type<Number>::set(writer, &src, field);
+			XTYPE src(t.getUnbiased(),N);
+			Type<XTYPE>::set(writer, &src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			Number src(0,N);
+			XTYPE src(0,N);
 			auto &t = *static_cast<dec::decimal<N>*>(data);
-			Type<Number>::get(reader, &src, field);
+			Type<XTYPE>::get(reader, &src, field);
 			if(src.p!=N)
 				src.v*=pow(10,N-src.p);
 			t.setUnbiased(src.v);
@@ -88,45 +79,45 @@ namespace dk {
 	};
 
 	template<>
-	class XForm<bool> : public XForm<char > {
+	class Type<bool> : public Type<char > {
 		const std::array<char, 2> TF; 
 	protected:
 	public:
-		XForm(std::array<char, 2> TF = { '1','0' }) : TF(TF) {}
-		~XForm() {}
+		Type(std::array<char, 2> TF = { '1','0' }) : TF(TF) {}
+		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
-			char src;
+			XTYPE src;
 			auto &t = *static_cast<const bool*>(data);
-			src = TF.at(t == false);
-			XForm<char>::set(writer, &src, field);
+			*src = TF.at(t == false);
+			Type<XTYPE>::set(writer, src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			char src;
+			XTYPE src;
 			auto &t = *static_cast<bool*>(data);
-			XForm<char>::get(reader, &src, field);
-			if (!(src == TF.at(0) || src == TF.at(1) || src == 0)) {
+			Type<XTYPE>::get(reader, src, field);
+			if (!(*src == TF.at(0) || *src == TF.at(1) || *src == 0)) {
 				//Conversion error
 			}
-			t = (src == TF.at(0));
+			t = (*src == TF.at(0));
 		}
 	};
 
 	template<>
-	class XForm<timestamp> : public Type<tm> {
+	class Type<timestamp> : public Type<tm> {
 		typedef timestamp T;
 	public:
-		XForm() {}
-		~XForm() {}
+		Type() {}
+		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			auto &t = *static_cast<const timestamp*>(data);
-			tm src;
+			XTYPE src;
 			t.as_tm(src);
-			Type<tm>::set(writer, &src, field);
+			Type<XTYPE>::set(writer, &src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			tm src;
+			XTYPE src;
 			auto &t = *static_cast<timestamp*>(data);
-			Type<tm>::get(reader, &src, field);
+			Type<XTYPE>::get(reader, &src, field);
 			t = src;
 		}
 	};

@@ -25,7 +25,7 @@ namespace dk {
 		/// between the database and c classes
 		template<class S, typename ...ARGS>
 		void xForm(ARGS&&... args) {
-			type_ = std::unique_ptr<IType>(new XForm<S>(std::forward<ARGS>(args)...));
+			type_ = std::unique_ptr<IType>(new Type<S>(std::forward<ARGS>(args)...));
 		}
 	public:
 		ColumnBase(size_t offset, const std::string &name, int position) :
@@ -117,107 +117,6 @@ namespace dk {
 	};
 
 	template<>
-	class Column<Number> : public ColumnBase {
-		unsigned int m; /// maximum number of digits (the precision)
-		unsigned int d; /// number of digits to the right of the decimal point (the scale)
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			ColumnBase(offset, name, column),m(10),d(0)
-		{
-			ColumnBase::xForm<Number >();
-		}
-		~Column() {}
-		int getPrecision() const override {
-			return m;
-		}
-		int getScale() const override {
-			return d;
-		}
-		Column<Number> & setPrecision(int m) /*override*/ {
-			this->m=m;
-			return *this;
-		}
-		Column<Number> & setScale(int d) /*override*/ {
-			this->d=d;
-			return *this;
-		}
-	};
-
-	template<int N>
-	class Column<dec::decimal<N> > : public Column<Number > {
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			Column<Number>(offset, name, column)
-		{
-			ColumnBase::xForm<dec::decimal<N> >();
-			setPrecision(18);
-			setScale(N);
-		}
-		~Column() {}
-	};
-
-	template<size_t N>
-	class Column<char[N]> : public Column<char *> {
-		size_t size;
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			Column<char *>(offset, name, column),size(N)
-		{
-			ColumnBase::xForm<char[N] >();
-		}
-		~Column() {}
-		Column<char[N]> &setSize(size_t size) /*override*/ {
-			assert(size<=N);
-			this->size=size;
-			return *this;
-		}
-		size_t getSize() const override {
-			return size;
-		}
-
-	};
-
-	template<>
-	class Column<char> : public Column<char[1]> {
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			Column<char[1]>(offset, name, column)
-		{
-			ColumnBase::xForm<char >();
-		}
-		~Column() {}
-	};
-
-	template<>
-	class Column<std::string> : public Column<char *> {
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			Column<char*>(offset, name, column)
-		{
-			ColumnBase::xForm<std::string >();
-			setSize(255);
-		}
-		~Column() {}
-	};
-
-	template<>
-	class Column<bool> : public Column<char> {
-	public:
-		Column(size_t offset, const std::string &name, int column) :
-			Column<char>(offset, name, column)
-		{
-			ColumnBase::xForm<bool>();
-
-		}
-		~Column() {}
-		Column<bool> &boolVal(const char *TF) {
-			std::array<char, 2> tf = { TF[0],TF[1] };
-			ColumnBase::xForm<bool>(tf);
-			return *this;
-		}
-	};
-
-	template<>
 	class Column<Sequence > : public ColumnBase {
 		using T = Sequence;
 		T sequence,increment;
@@ -278,6 +177,111 @@ namespace dk {
 		}
 		std::string getDateFormat() const override {
 			return format;
+		}
+	};
+
+	template<>
+	class Column<Number> : public ColumnBase {
+		unsigned int m; /// maximum number of digits (the precision)
+		unsigned int d; /// number of digits to the right of the decimal point (the scale)
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			ColumnBase(offset, name, column),m(10),d(0)
+		{
+			xForm<Number >();
+		}
+		~Column() {}
+		int getPrecision() const override {
+			return m;
+		}
+		int getScale() const override {
+			return d;
+		}
+		Column<Number> & setPrecision(int m) /*override*/ {
+			this->m=m;
+			return *this;
+		}
+		Column<Number> & setScale(int d) /*override*/ {
+			this->d=d;
+			return *this;
+		}
+	};
+
+	template<int N>
+	class Column<dec::decimal<N> > : public Column<typename Type<dec::decimal<N>>::XTYPE > {
+		using BASE = Column<typename Type<dec::decimal<N>>::XTYPE > ;
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			BASE(offset, name, column)
+		{
+			ColumnBase::xForm<dec::decimal<N> >();
+			BASE::setPrecision(18);
+			BASE::setScale(N);
+		}
+		~Column() {}
+	};
+
+	template<size_t N>
+	class Column<char[N]> : public Column<typename Type<char[N]>::XTYPE > {
+		size_t size;
+		using BASE = Column<typename Type<char[N]>::XTYPE > ;
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			BASE(offset, name, column),size(N)
+		{
+			ColumnBase::xForm<char[N] >();
+		}
+		~Column() {}
+		Column<char[N]> &setSize(size_t size) /*override*/ {
+			assert(size<=N);
+			this->size=size;
+			return *this;
+		}
+		size_t getSize() const override {
+			return size;
+		}
+
+	};
+
+	template<>
+	class Column<std::string> : public Column<Type<std::string>::XTYPE> {
+		using BASE = Column<Type<std::string>::XTYPE > ;
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			BASE(offset, name, column)
+		{
+			ColumnBase::xForm<std::string >();
+			setSize(255);
+		}
+		~Column() {}
+	};
+	template<>
+	class Column<char> : public Column<Type<char>::XTYPE> {
+		using BASE = Column<Type<char>::XTYPE > ;
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			BASE(offset, name, column)
+		{
+			ColumnBase::xForm<char >();
+		}
+		~Column() {}
+	};
+
+	template<>
+	class Column<bool> : public Column< Type<bool>::XTYPE > {
+		using BASE = Column<Type<bool>::XTYPE > ;
+	public:
+		Column(size_t offset, const std::string &name, int column) :
+			BASE(offset, name, column)
+		{
+			ColumnBase::xForm<bool>();
+
+		}
+		~Column() {}
+		Column<bool> &boolVal(const char *TF) {
+			std::array<char, 2> tf = { TF[0],TF[1] };
+			ColumnBase::xForm<bool>(tf);
+			return *this;
 		}
 	};
 

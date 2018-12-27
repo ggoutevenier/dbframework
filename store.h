@@ -152,8 +152,9 @@ namespace dk {
 
 		template<class T>
 		auto projection() const {
-			using V=std::vector<T const*>;
-			return static_cast<Object<V>*>(find_<T>(projection_))->get();
+			return const_cast<Store*>(*this)->projection<T>();
+//			using V=std::vector<T const*>;
+//			return static_cast<Object<V>*>(find_<T>(projection_))->get();
 		}
 
 		template<class T>
