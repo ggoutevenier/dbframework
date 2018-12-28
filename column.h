@@ -6,101 +6,89 @@
 
 namespace dk {
 	class ColumnBase : public IColumn {
+	protected:
 		size_t offset;
 		std::string name;
 		int position;
-	protected:
 		std::list<std::shared_ptr<IColumn> > others;
-		std::unique_ptr<IType> type_;
-		std::vector<char> buff;
-		/// function returns the a pointer offset to the correct position
-		/// assuming the pointer passed in is at the first position of the record
 		void *adjust(void *data) const {
-			return ((char*)data) + offset;
+			return static_cast<char*>(data) + offset;
 		}
 		const void *adjust(const void *data) const {
-			return ((char*)data) + offset;
-		}
-		/// function to set a transform of the column as it is transitioned
-		/// between the database and c classes
-		template<class S, typename ...ARGS>
-		void xForm(ARGS&&... args) {
-			type_ = std::unique_ptr<IType>(new Type<S>(std::forward<ARGS>(args)...));
+			return const_cast<Column<T>*>(this)->adjust(data);
 		}
 	public:
-		ColumnBase(size_t offset, const std::string &name, int position) :
+		ColumnBsae(size_t offset, const std::string &name, int position) :
 			offset(offset), name(name), position(position) {}
 		virtual ~ColumnBase() {}
-		/// get the name of the column
-		std::string getName() const override { return name; }
 
-		/// function to write column of data out to the database
-		void set(IStatement &writer, const  void *data) override {
-			assert(type_.get());
-			type_->set(writer, adjust(data), *this);
-		}
-		/// function to read column of data from the database
-		void get(IResultSet &reader, void *data) override {
-			assert(type_.get());
-			type_->get(reader, adjust(data), *this);
-			for (auto &v : others) //populate others
-				v->get(reader, data);
-		}
-		/// function to resolve any column pointer if needed
-		bool resolve(Store &store, void *data) const override {
-			assert(type_.get());
-			return type_->resolve(store, adjust(data));
-		}
-		/// function to return the database type of the column
-		const std::string type(const IMetaData &metadata) const override {
-			assert(type_.get());
-			return type_->type(metadata, *this);
-		}
-		/// get the position of the column in the query
-		int getColumn() const { return position; }
+		std::string getColumnName() const override { return name; }
 
-		std::vector<char> &getBuff() override {
-			return buff;
-		}
+		int getColumnPosition() const override{ return position; }
 
 		void other(std::shared_ptr<IColumn> &o) {
 			static_cast<ColumnBase *>(o.get())->position = this->position;
 			others.push_back(o);
 		}
-		// is the column selectable/insertable from the database
-		bool is_selectable() const override {
-			return type_->is_selectable();
-		}
-		const IType &getType() const override {
-			return *type_;
+		bool selectable() const override {
+			return getType()->selectabe();
 		}
 		size_t getSize() const override {
-			return buff.size();
-		}
-		int getPrecision() const override {
-			return 0;
-		}
-		int getScale() const override {
-			return 0;
-		}
-		std::string getDateFormat() const override {
-			return "";
-		}
-		void toBuff(std::string str) override {
-			size_t n = std::min(str.length(),getBuff().size());
-
-			if(n==0) {
-				getBuff().at(0)=0;
-			}
-			else {
-				auto it=std::copy_n(str.begin(),n,getBuff().begin());
-				if(n<getBuff().size()) {
-					*it=0;
-				}
-			}
+			return gtType()->getSize();
 		}
 	};
 
+
+	template<class T>
+	class Column : public ColumnBase , public Type<T> {
+	protected:
+	public:
+		Column(size_t offset, const std::string &name, int position) :
+			ColumnBase(offset, name position) {}
+		virtual ~Column() {}
+
+		void set(IStatement &writer, const  void *data) override {
+			Type<T>::set(writer, adjust(data), *this);
+		}
+
+		void get(IResultSet &reader, void *data) override {
+			Type<T>::get(reader, adjust(data), *this);
+			for (auto &v : others) //populate others
+				v->get(reader, data);
+		}
+
+		bool resolve(Store &store, void *data) const override {
+			return Type<T>::resolve(store, adjust(data));
+		}
+
+		const IType *getType() const override {
+			return this;
+		}
+	};
+
+	template<class T>
+	class Column<const logic::Function<T> *> : public ColumnBase {
+	public:
+		Column(size_t offset, int column) :
+			ColumnBase(offset, "", column)
+		{
+		}
+		~Column() {}
+
+		void set(IStatement &writer, const  void *data) override {}
+		void get(IResultSet &reader, void *data) override {}
+
+		const IType *getType() const override {return 0;}
+
+		bool resolve(Store &, void *data) const override {
+			T &t = *(T*)data;
+			const logic::Function<T> **ptr = ((const logic::Function<T>**)adjust(data));
+			*ptr = logic::Functions<T>::getFunction(static_cast<typename T::key_type>(t));
+			return true;
+		}
+	};
+
+/*
 	template<class T>
 	class Column : public ColumnBase {
 	public:
@@ -197,11 +185,11 @@ namespace dk {
 		int getScale() const override {
 			return d;
 		}
-		Column<Number> & setPrecision(int m) /*override*/ {
+		Column<Number> & setPrecision(int m) {
 			this->m=m;
 			return *this;
 		}
-		Column<Number> & setScale(int d) /*override*/ {
+		Column<Number> & setScale(int d)  {
 			this->d=d;
 			return *this;
 		}
@@ -232,7 +220,7 @@ namespace dk {
 			ColumnBase::xForm<char[N] >();
 		}
 		~Column() {}
-		Column<char[N]> &setSize(size_t size) /*override*/ {
+		Column<char[N]> &setSize(size_t size) {
 			assert(size<=N);
 			this->size=size;
 			return *this;
@@ -283,6 +271,6 @@ namespace dk {
 			ColumnBase::xForm<bool>(tf);
 			return *this;
 		}
-	};
+	};*/
 
 }

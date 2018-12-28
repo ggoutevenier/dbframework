@@ -17,7 +17,6 @@ namespace dk {
 		const std::string typeString(const IColumn &f) const override;
 		const std::string typeDate(const IColumn &f) const override;
 		const std::string typeNumber(const IColumn &f) const override;
-//		virtual const char *dataType(const std::string &, const IField  &f) const =0;
 	public:
 		MetaData(IConnection &c) : conn(c) {}
 		virtual ~MetaData() {}
@@ -37,7 +36,6 @@ namespace dk {
 		ResultSet(IStatement &stmt) :stmt(stmt) {}
 		void get(float &v, IColumn &f) override;
 		void get(double &v, IColumn &f) override=0;
-//		void get(char &v, IColumn &f) override;
 		void get(char *v, IColumn &f) override=0;
 		void get(bool &v, IColumn &f) override;
 		void get(int16_t &v, IColumn &f) override;
@@ -48,8 +46,6 @@ namespace dk {
 		void get(uint64_t &v, IColumn &f) override;
 		void get(struct tm &v, IColumn &f) override;
 		void get(Number &v, IColumn &f) override;
-//		void get(std::string &v, IColumn &f) override;
-		void get(IColumn &f) override;
 	};
 
 	class Statement : public IStatement {
@@ -57,14 +53,10 @@ namespace dk {
 		IConnection &conn;
 		std::string sql;
 		template<class S, class T> void set_(const T &t, IColumn &f);
-//		template<class T> void setString(const T &t, IColumn &f);
-//		template<class T> void setInt64(const T &t, IField &f);
-//		void setDouble(const float &t, IField &f);
 	public:
 		Statement(IConnection &conn) :conn(conn) {}
 		virtual ~Statement() {}
 		void commit() override;
-//		void set_array_size(unsigned int) override {};
 		void set(const float &v, IColumn &f) override;
 		void set(const bool &v, IColumn &f) override;
 		void set(const std::int16_t &v, IColumn &f) override;
@@ -74,12 +66,9 @@ namespace dk {
 		void set(const std::uint32_t &v, IColumn &f) override;
 		void set(const std::uint64_t &v, IColumn &f) override;
 		void set(const double &v, IColumn &f) override=0;
-//		void set(const char &v, IColumn &f) override;
 		void set(const char *v, IColumn &f) override=0;
 		void set(const struct tm &v, IColumn &f) override;
 		void set(const Number &v, IColumn &f) override;
-//		void set(const std::string &v, IColumn &f) override;
-		void set(IColumn &f) override;
 	};
 
 	class Connection : public IConnection {
@@ -145,8 +134,8 @@ namespace dk {
 		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
-			ss << (column->is_selectable() ? "" : "null as ");
-			ss << column->getName();
+			ss << (column->selectable() ? "" : "null as ");
+			ss << column->getColumnName();
 		}
 		ss << " from " << record.getName();
 		return ss.str();
@@ -159,7 +148,7 @@ namespace dk {
 		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
-			ss << column->getName();
+			ss << column->getColumnName();
 		}
 		ss << " ) values ( ";
 		first = true;
@@ -167,7 +156,7 @@ namespace dk {
 			(void)column; // suppress warning about column not used
 			if (!first) ss << ",";
 			else first = false;
-			ss << bindVar(column->getName());
+			ss << bindVar(column->getColumnName());
 		}
 		ss << ")";
 
@@ -181,8 +170,8 @@ namespace dk {
 		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
-			std::string name = column->getName();
-			std::string type = column->type(*this);
+			std::string name = column->getColumnName();
+			std::string type = column->getType()->name(*this);
 			ss << name << " " << type ;
 		}
 		ss << ")";
@@ -190,8 +179,11 @@ namespace dk {
 	}
 
 	/****************************************** Resultset ***************************/
-	inline void ResultSet::get(IColumn &column) {
-		get(column.getBuff().data(),column);
+
+	inline void ResultSet::get(bool &value, IColumn &column) {
+		Type<bool> type = dynamic_cast<Type<bool>(column.getType());
+		get(type->buff,column);
+		type->set(value);
 	}
 
 	template<class T>
@@ -210,9 +202,6 @@ namespace dk {
 		getDouble(value, column);
 	}
 
-	inline void ResultSet::get(bool &value, IColumn &column) {
-		getInt64(value, column);
-	}
 	inline void ResultSet::get(int16_t &value, IColumn &column) {
 		getInt64(value, column);
 	}
@@ -241,57 +230,46 @@ namespace dk {
 		value.fromDouble(d);
 	}
 
-	static void fromString(char *str, tm &data, std::string format) {
-		data.tm_hour = data.tm_min = data.tm_sec = 0;
-		sscanf(str, format.c_str(),
-			&data.tm_year,
-			&data.tm_mon,
-			&data.tm_mday,
-			&data.tm_hour,
-			&data.tm_min,
-			&data.tm_sec);
-		data.tm_year -= 1900;
-		data.tm_mon -= 1;
-		mktime(&data);
+	inline void ResultSet::get(struct tm &v, IColumn &column) {
+		get(dynamic_cast<Type<T>*>(column.getType())->buff,column);
+		type.set(v);
 	}
 
-	inline void ResultSet::get(struct tm &v, IColumn &f) {
-		get(f);
-		fromString(f.getBuff().data(), v, f.getDateFormat());
-	}
-
-	/****************************************** Statement ***************************/
-	inline void Statement::set(IColumn &column) {
-		set(column.getBuff().data(),column);
-	}
-
+	/****************************************** Statement ***************************/=
 	template<class S,class T>
 	inline void Statement::set_(const T &t, IColumn &column) {
-		set( boost::lexical_cast<S>(t),column);
+		set( static_cast<S>(t),column);
 	}
 
 	inline void Statement::set(const float &value, IColumn &column) {
 		set_<double>(value, column);
 	}
+	
 	inline void Statement::set(const bool &value, IColumn &column) {
 		set_<int16_t>(value, column);
 	}
+	
 	inline void Statement::set(const std::int16_t &value, IColumn &column) {
 		set_<int32_t>(value, column);
 	}
+	
 	inline void Statement::set(const std::int32_t &value, IColumn &column) {
 		set_<int64_t>(value, column);
 	}
+	
 	inline void Statement::set(const std::int64_t &value, IColumn &column) {
 		double d=value;
 		set(d, column);
 	}
+	
 	inline void Statement::set(const std::uint16_t &value, IColumn &column) {
 		set_<int32_t>(value, column);
-	};
+	}
+	
 	inline void Statement::set(const std::uint32_t &value, IColumn &column) {
 		set_<int64_t>(value, column);
 	}
+	
 	inline void Statement::set(const std::uint64_t &value, IColumn &column) {
 		double d=value;
 		set(d, column);
@@ -302,24 +280,8 @@ namespace dk {
 		set(d, column);
 	}
 
-	static std::string toString(const tm &data,std::string format) {
-		char dt[60];
-		sprintf(
-			dt,
-			format.c_str(),
-			data.tm_year + 1900,
-			data.tm_mon + 1,
-			data.tm_mday,
-			data.tm_hour,
-			data.tm_min,
-			data.tm_sec
-		);
-		return dt;
-	}
-
-	inline void Statement::set(const struct tm &v, IColumn &f) {
-		f.toBuff(toString(v,f.getDateFormat()));
-		set(f);
+	inline void Statement::set(const struct tm &v, IColumn &column) {
+		set(dynamic_cast<Type<tm> * (f->getType())->asString(tm),column);
 	};
 
 	inline void Statement::commit() { conn.commit(); }

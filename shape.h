@@ -52,12 +52,12 @@ namespace dk {
 			using key_type = key::ShapeType; // layout structures must tyepdef key_type
 			std::string typeDesc;
 			// pointer to implementation of interface defined above
-			const logic::Function<layout::ShapeType> *logic;  
+			const logic::Function<layout::ShapeType> *logic;
 		};
 
 		struct Shape : key::Shape {
 			using key_type = key::Shape;
-char shapeName[64];//			std::string shapeName;
+			char shapeName[64];
 			// the following fields resolves to the appropriate ShapeType 
 			// row based on value in field type.type_id
 			Ref<layout::ShapeType> type; 

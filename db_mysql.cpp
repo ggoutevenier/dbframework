@@ -181,27 +181,18 @@ namespace dk {
 			flush();
 		}
 
-//		void Statement::set(const std::string &v, IColumn &f) {
-//			stmt->setString(f.getColumn(), v);
-//		}
-
 		void Statement::set(const char *v, IColumn &f) {
 			std::string str(v,&v[std::min(strlen(v),f.getSize()-1)]);
-			stmt->setString(f.getColumn(), str);
+			stmt->setString(f.getColumnPosition(), str);
 		}
 		void Statement::set(const std::int64_t &v, IColumn &f) {
-			stmt->setInt(f.getColumn(), v);
+			stmt->setInt(f.getColumnPosition(), v);
 		}
 
 		void Statement::set(const double &v, IColumn &f) {
-			stmt->setDouble(f.getColumn(), v);
+			stmt->setDouble(f.getColumnPosition(), v);
 		}
 
-//		void Statement::set(const IColumn &f) {
-//			std::string str;
-//			std::copy(f.getBuff().begin(),f.getBuff().end(),str.begin());
-//			stmt->setString(f.getColumn(), str);
-//		}
 		std::string MetaData::bindVar(const std::string column) const { return "?";}
 		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
 		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
@@ -221,47 +212,19 @@ namespace dk {
 			return "char(1)";
 		}
 
-/*		std::string MetaData::insertSQL(const IRecord &record) const {
-				std::stringstream ss;
-				ss << "insert into " << record.getName() << "(";
-				bool first = true;
-				for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
-					if (!first) ss << ",";
-					else first = false;
-					ss << column->getName();
-				}
-				ss << " ) values ( ";
-				first = true;
-				for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
-					if (!first) ss << ",";
-					else first = false;
-					ss << "?";
-				}
-				ss << ")";
-
-				return ss.str();
-			}*/
 		ResultSet::~ResultSet() {
 		}
 		void ResultSet::get(char *v, IColumn &f) {
-			std::string str = rset->getString(f.getColumn());
-			for(size_t i=0;i<std::min(str.length(),f.getSize());i++)
-				v[i]=str.at(i);
+			std::string str = rset->getString(f.getColumnPosition());
+			size_t n=std::min(str.length(),f.getSize());
+			std::copy_n(str.begin(),n,v);
+			v[n]=0;
 		}
 		void ResultSet::get(double &v, IColumn &f) {
-			v = rset->getDouble(f.getColumn());
+			v = rset->getDouble(f.getColumnPosition());
 		}
 		void ResultSet::get(int64_t &v, IColumn &f) {
-			v = rset->getInt64(f.getColumn());
+			v = rset->getInt64(f.getColumnPosition());
 		}
-//		void ResultSet::get(std::string &v, const IColumn &f) {
-//			v = rset->getString(f.getColumn());
-//		}
-
-//		void ResultSet::get(IColumn &f) {
-//			std::string str = rset->getString(f.getColumn());
-//			assert(f.getBuff().size()>=str.length());
-//			std::copy(str.begin(),str.end(),f.getBuff().begin());
-//		}
 	}
 }

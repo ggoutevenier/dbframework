@@ -102,9 +102,10 @@ namespace dk {
 		virtual ~IType() {}
 		virtual void set(IStatement &writer, const  void *data, IColumn &field) const = 0;
 		virtual void get(IResultSet &reader, void *data, IColumn &field) const = 0;
-		virtual const std::string type(const IMetaData &mdata, const IColumn &field) const = 0;
+		virtual const std::string name(const IMetaData &mdata, const IColumn &field) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
-		virtual bool is_selectable() const = 0;
+		virtual bool selectable() const = 0;
+		virtual size_t getSize() const = 0;
 	};
 
 	class IColumn {
@@ -112,20 +113,14 @@ namespace dk {
 		virtual std::string getName() const = 0;
 		virtual void set(IStatement &writer, const  void *data) = 0;
 		virtual void get(IResultSet &reader, void *data) = 0;
-		virtual const std::string type(const IMetaData &metadata) const = 0;
+//		virtual const std::string type(const IMetaData &metadata) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
-		virtual int getColumn() const = 0;
-		virtual std::vector<char> &getBuff() = 0;
-		const std::vector<char> &getBuff() const {return const_cast<IColumn*>(this)->getBuff();}
+		virtual int getColumnPosition() const = 0;
+		virtual std::string getColumnName() const = 0;
 		virtual void other(std::shared_ptr<IColumn> &other) = 0;
-		virtual bool is_selectable() const = 0;
 		virtual ~IColumn() {}
-		virtual const IType &getType() const = 0;
-		virtual size_t getSize() const = 0;
-		virtual int getPrecision() const = 0;
-		virtual int getScale() const = 0;
-		virtual std::string getDateFormat() const = 0;
-		virtual void toBuff(std::string ) = 0;
+		virtual const IType *getType() const = 0;
+		virtual bool selectable() const = 0;
 	};
 
 	class IRecord {

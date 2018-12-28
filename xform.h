@@ -10,21 +10,37 @@
  * before it is put into the C++ class
  */
 namespace dk {
-//	template<class T> class XForm : public Type<T>{};
-
 	template<>
 	class Type<std::string > : public Type<char*> {
+		std::vector<char> buff;
+		void toBuff_(std::string str) override {
+			// if string large then buff only copy size bytes of string
+			// make sure to set null term
+			*std::copy_n(
+				str.begin(),
+				std::min(str.length(),getSize()),
+				buff.begin()
+			)=0;
+		}
 	public:
 		Type() {}
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) const override {
-			column.toBuff(*static_cast<const std::string*>(data));
-			writer.set(column);
+			toBuff_(*static_cast<const std::string*>(data));
+			Type<char*>::writer.set(buff.data(),column);
 		}
 		void get(IResultSet &reader, void *data, IColumn &column) const override {
-			auto &v = *static_cast<std::string*>(data);
-			reader.get(column);
-			v = column.getBuff().data();
+			Type<char*>::reader.get(buff.data(),column);
+			*static_cast<std::string*>(data) = buff.data();
+		}
+		Type<std::string> setSize(size_t size) {
+			buff.resize(size+1);
+			buff.at(size)=0; // set null term
+			return *this;
+		}
+		size_t getSize() const override {
+			if(buff.size()==0) setSize(0);// if buff not size make room for null term
+			return buff.size()-1; // size one less due to null term
 		}
 	};
 
@@ -35,11 +51,14 @@ namespace dk {
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) const override {
 			auto v = static_cast<const char *>(data);
-			Type<XTYPE>::set(writer, &v, column);
+			Type<char *>::set(writer, &v, column);
 		}
 		void get(IResultSet &reader, void *data, IColumn &column) const override {
 			auto v = static_cast<char *>(data);
-			Type<XTYPE>::get(reader, &v,column);
+			Type<char *>::get(reader, &v,column);
+		}
+		size_t getSize() const override {
+			return N;
 		}
 	};
 
@@ -50,11 +69,11 @@ namespace dk {
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) const override {
 			auto v = static_cast<const char*>(data);
-			Type<XTYPE>::set(writer, v, column);
+			Type<char[1]>::set(writer, v, column);
 		}
 		void get(IResultSet &reader, void *data, IColumn &column) const override {
 			auto v = static_cast<char*>(data);
-			Type<XTYPE>::get(reader,v,column);
+			Type<char[1]>::get(reader,v,column);
 		}
 	};
 
@@ -65,13 +84,13 @@ namespace dk {
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			auto &t = *static_cast<const dec::decimal<N>*>(data);
-			XTYPE src(t.getUnbiased(),N);
-			Type<XTYPE>::set(writer, &src, field);
+			Number src(t.getUnbiased(),N);
+			Type<Number>::set(writer, &src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			XTYPE src(0,N);
+			Number src(0,N);
 			auto &t = *static_cast<dec::decimal<N>*>(data);
-			Type<XTYPE>::get(reader, &src, field);
+			Type<Number>::get(reader, &src, field);
 			if(src.p!=N)
 				src.v*=pow(10,N-src.p);
 			t.setUnbiased(src.v);
@@ -79,26 +98,22 @@ namespace dk {
 	};
 
 	template<>
-	class Type<bool> : public Type<char > {
-		const std::array<char, 2> TF; 
-	protected:
+	class Type<bool> : public TypeBase<bool> {
+		const std::array<char, 2> TF;
+		
 	public:
-		Type(std::array<char, 2> TF = { '1','0' }) : TF(TF) {}
-		~Type() {}
-		void set(IStatement &writer, const  void *data, IColumn &field) const override {
-			XTYPE src;
-			auto &t = *static_cast<const bool*>(data);
-			*src = TF.at(t == false);
-			Type<XTYPE>::set(writer, src, field);
+		char buff;
+		Type(std::array<char, 2> TF = { '1','0' }) : TF(TF) {
 		}
-		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			XTYPE src;
-			auto &t = *static_cast<bool*>(data);
-			Type<XTYPE>::get(reader, src, field);
-			if (!(*src == TF.at(0) || *src == TF.at(1) || *src == 0)) {
-				//Conversion error
-			}
-			t = (*src == TF.at(0));
+		~Type() {}
+		void set(bool value) {
+			buff = TF.at(value == false);
+		}
+		void get(bool &data, IColumn &field) const{
+			data = (TF[0]==buff);
+		}
+		size_t getSize() const override {
+			return 1;
 		}
 	};
 
@@ -110,14 +125,14 @@ namespace dk {
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &field) const override {
 			auto &t = *static_cast<const timestamp*>(data);
-			XTYPE src;
+			tm src;
 			t.as_tm(src);
-			Type<XTYPE>::set(writer, &src, field);
+			Type<tm>::set(writer, &src, field);
 		}
 		void get(IResultSet &reader, void *data, IColumn &field) const override {
-			XTYPE src;
+			tm src;
 			auto &t = *static_cast<timestamp*>(data);
-			Type<XTYPE>::get(reader, &src, field);
+			Type<tm>::get(reader, &src, field);
 			t = src;
 		}
 	};
