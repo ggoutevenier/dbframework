@@ -13,14 +13,6 @@ namespace dk {
 			const std::string name,
 			ResolveFunc f = [](Store &, void *)->bool { return true; }
 		) : Record(name, f) {}
-/*		template<class B, class T>
-		Column<const logic::Function<T> *> &add(B &b, const logic::Function<T> *&t) {
-			logic_ =
-				std::make_unique<Column<const logic::Function<T> *> >(
-					getOffset(b, t),
-					(int)columns.size() + 1);
-			return *(Column<const logic::Function<T> *>*)logic_.get();
-		}*/
 		template<class B, class T>
 		Column<T> &add(B &b, T &t, const std::string &name) {
 			IColumn *ptr = 0;
@@ -68,6 +60,7 @@ namespace dk {
 			return *(Column<Ref<T> >*)refs.back().get(); // might have race condition
 		}
 	};
+
 	template<class T>
 	class metadata : public RecordBuilder , public T {
 		template<class S>

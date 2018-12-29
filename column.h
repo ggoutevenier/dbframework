@@ -33,12 +33,7 @@ namespace dk {
 		bool selectable() const override {
 			return getType().selectable();
 		}
-
-//		size_t getSize() const override {
-//			return getType().getSize();
-//		}
 	};
-
 
 	template<class T>
 	class Column : public ColumnBase , public Type<T> {
@@ -91,5 +86,4 @@ namespace dk {
 			return true;
 		}
 	};
-
 }

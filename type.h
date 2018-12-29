@@ -40,10 +40,7 @@ namespace dk {
 	};
 
 	template<class T>
-	class Type : public TypeBase<T> {
-	public:
-//		IType &getType() override {return *this;}
-	};
+	class Type : public TypeBase<T> {};
 
 	template<>
 	class Type<Number> : public TypeBase<Number> {
@@ -67,7 +64,6 @@ namespace dk {
 			this->d=d;
 			return *this;
 		}
-//		IType &getType() override {return *this;}
 	};
 
 	template<>
@@ -92,7 +88,6 @@ namespace dk {
 		size_t getSize() const override {
 			return size;
 		}
-
 		void set(
 			IStatement &writer,
 			const void *data,
@@ -107,9 +102,6 @@ namespace dk {
 		) override {
 			reader.get(static_cast<char *>(data), field);
 		}
-//		IType &getType() override {
-//			return *static_cast<IType*>(this);
-//		}
 	};
 
 	template<>
@@ -122,9 +114,6 @@ namespace dk {
 		void setDateFormat(std::string format) {
 			this->format = format;
 		}
-//		std::string getDateFormat() const {
-//			return format;
-//		}
 		size_t getSize() const override {return buff.size();}
 		
 		void setV(tm &date) {
@@ -156,7 +145,6 @@ namespace dk {
 			);
 			return buff.data();
 		}
-//		IType &getType() override {return *this;}
 	};
 
 	template<>
@@ -176,7 +164,6 @@ namespace dk {
 		size_t getSize() const override {
 			return 1;
 		}
-//		IType &getType() override {return *this;}
 	};
 
 
@@ -194,7 +181,6 @@ namespace dk {
 		bool selectable() const override {
 			return false;
 		}
-//		IType &getType() override {return *this;}
 	};
 
 	template<class T>
