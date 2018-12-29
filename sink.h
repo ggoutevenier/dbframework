@@ -3,12 +3,8 @@
 #include <deque>
 
 namespace dk {
-	class Sinkable {
-	public:
-		virtual ~Sinkable() {}
-	};
 	template<class T>
-	class ISink : public Sinkable {
+	class ISink {
 	public:
 		using DTL = T;
 		virtual ~ISink() {}
@@ -16,7 +12,7 @@ namespace dk {
 	};
 	
 	template<class T>
-	class Sink : public ISink<T> {
+	class Sink {
 		std::shared_ptr<IConnection> conn;
 		std::unique_ptr <IStatement> stmt;
 		uint32_t counter;
@@ -50,46 +46,4 @@ namespace dk {
 			stmt->executeUpdate();
 		}
 	};
-
-/*	template<class D>
-	class SinkContainer : public ISink<D > {
-		Sink<typename D::value_type> sink;
-		using T = typename D::value_type;
-	public:
-		SinkContainer(std::shared_ptr<IConnection> conn, Store &store) : sink(conn, store) {}
-		void push_back(const D &d) {
-			for (auto &v : d)
-				sink.push_back(v);
-		}
-	};
-
-	template<class T>
-	class Sink<std::list<T>> : public SinkContainer<std::list<T>> {
-	public:
-		Sink(std::shared_ptr<IConnection> conn, Store &store) : SinkContainer<std::list<T>>(conn, store) {}
-	};
-
-	template<class T>
-	class Sink<std::deque<T> > : public SinkContainer<std::deque<T>> {
-	public:
-		Sink(std::shared_ptr<IConnection> conn, Store &store) : SinkContainer<std::deque<T>>(conn, store) {}
-	};
-
-	template<class T>
-	class Sink<std::vector<T> > : public SinkContainer<std::vector<T>> {
-	public:
-		Sink(std::shared_ptr<IConnection> conn, Store &store) : SinkContainer<std::vector<T>>(conn, store) {}
-	};
-
-	template<class T>
-	class Sink<std::map<typename T::key_type,T> > : public ISink<std::map<typename T::key_type,T> > {
-		using D = std::map<typename T::key_type,T>;
-		Sink<T> sink;
-	public:
-		Sink(std::shared_ptr<IConnection> conn, Store &store) : sink(conn, store) {}
-		void push_back(const D &d) {
-			for (auto &v : d)
-				sink.push_back(v.second);
-		}
-	};*/
 }

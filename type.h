@@ -1,24 +1,26 @@
 #pragma once
 #include "interface.h"
 #include "ref.h"
+#include <algorithm>
+//#include "sequence.h"
 
 namespace dk {
 	template<class T>
 	class TypeBase : public IType {
 	public:
-		virtual ~Type() {}
+		virtual ~TypeBase() {}
 		void set(
 			IStatement &writer,
-			const  void *data,
+			const void *data,
 			IColumn &field
-		) const override {
+		) override {
 			writer.set(*static_cast<const T *>(data), field);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
 			IColumn &field
-		) const override {
+		) override {
 			reader.get(*static_cast<T *>(data), field);
 		}
 		const std::string name(
@@ -34,23 +36,27 @@ namespace dk {
 			return true;
 		}
 		size_t getSize() const override {return 0;}
+		IType &getType() {return *this;}
 	};
 
 	template<class T>
-	class Type : public TypeBase<T> {};
+	class Type : public TypeBase<T> {
+	public:
+//		IType &getType() override {return *this;}
+	};
 
 	template<>
-	class Type<Number> : TypeBase<T> {
-		unsigned int m; /// maximum number of digits (the precision)
-		unsigned int d; /// number of digits to the right of the decimal point (the scale)
+	class Type<Number> : public TypeBase<Number> {
+		uint32_t m; /// maximum number of digits (the precision)
+		uint32_t d; /// number of digits to the right of the decimal point (the scale)
 	public:
-		Type() {}
+		Type(int m=10,int d=0):m(m),d(d) {}
 		~Type() {}
 
-		int getPrecision() const {
+		uint32_t getPrecision() const {
 			return m;
 		}
-		int getScale() const {
+		uint32_t getScale() const {
 			return d;
 		}
 		Type<Number> & setPrecision(int m) {
@@ -61,11 +67,54 @@ namespace dk {
 			this->d=d;
 			return *this;
 		}
-	}
+//		IType &getType() override {return *this;}
+	};
+
+	template<>
+	class Type<char *> : public TypeBase<char *> {
+		size_t size;
+	public:
+		Type(size_t size=0):size(size) {}
+		std::string asString(const char *v) {
+			size_t n = std::min(strlen(v),getSize());
+			std::string str(v,&v[n]);
+			return str;
+		}
+		void fromString(const std::string str,char *v) {
+			size_t n=std::min(str.length(),getSize());
+			std::copy_n(str.begin(),n,v);
+			v[n]=0;
+		}
+		Type<char *> setSize(size_t size) {
+			this->size=size;
+			return *this;
+		}
+		size_t getSize() const override {
+			return size;
+		}
+
+		void set(
+			IStatement &writer,
+			const void *data,
+			IColumn &field
+		) override {
+			writer.set(static_cast<const char *>(data), field);
+		}
+		void get(
+			IResultSet &reader,
+			void *data,
+			IColumn &field
+		) override {
+			reader.get(static_cast<char *>(data), field);
+		}
+//		IType &getType() override {
+//			return *static_cast<IType*>(this);
+//		}
+	};
 
 	template<>
 	class Type<tm> : public TypeBase<tm> {
-		std::array<char,30> format;
+		std::string format;
 	public:
 		std::array<char,20> buff;
 		Type():format("%4d-%02d-%02d %02d:%02d:%02d") {}
@@ -73,16 +122,15 @@ namespace dk {
 		void setDateFormat(std::string format) {
 			this->format = format;
 		}
-		std::string getDateFormat() const override {
-			return format;
-		}
+//		std::string getDateFormat() const {
+//			return format;
+//		}
 		size_t getSize() const override {return buff.size();}
 		
-		void set(tm &date) {
-			tm &date = *static_cast<tm*>(data);
+		void setV(tm &date) {
 			date.tm_hour = date.tm_min = date.tm_sec = 0;
-			sscanf(	buff,
-				format,
+			sscanf(	buff.data(),
+				format.c_str(),
 				&date.tm_year,
 				&date.tm_mon,
 				&date.tm_mday,
@@ -95,10 +143,10 @@ namespace dk {
 			mktime(&date);
 		}
 		
-		char * asAString(const tm &date) {
+		const char *asString(const tm &date) {
 			sprintf(
-				buff,
-				format,
+				buff.data(),
+				format.c_str(),
 				date.tm_year + 1900,
 				date.tm_mon + 1,
 				date.tm_mday,
@@ -106,27 +154,47 @@ namespace dk {
 				date.tm_min,
 				date.tm_sec
 			);
-			return buff;
+			return buff.data();
 		}
-	}
+//		IType &getType() override {return *this;}
+	};
 
+	template<>
+	class Type<bool> : public TypeBase<bool> {
+		const std::array<char, 2> TF;
+
+	public:
+		char buff[2];
+		Type(std::array<char, 2> TF = { '1','0' }) : TF(TF) {buff[1]=0;}
+		~Type() {}
+		void set(bool &value) {
+			value = (TF[0]==buff[0]);
+		}
+		void get(bool &value, IColumn &field) {
+			buff[0] = TF.at(value == false);
+		}
+		size_t getSize() const override {
+			return 1;
+		}
+//		IType &getType() override {return *this;}
 	};
 
 
 	template<>
-	class Type < Sequence > : public Type<Sequence::type> {
+	class Type < Sequence > : public TypeBase<Sequence::type> {
 	public:
 		virtual ~Type() {}
 		void get(
 			IResultSet &reader,
 			void *data,
 			IColumn &field
-		) const override { //show never call Field<Sequence>::get should handle
+		) override { //show never call Field<Sequence>::get should handle
 			assert(false);
 		}
 		bool selectable() const override {
 			return false;
 		}
+//		IType &getType() override {return *this;}
 	};
 
 	template<class T>
@@ -135,13 +203,13 @@ namespace dk {
 		typedef Ref<T> R;
 	protected:
 	public:
-		void set(IStatement &writer, const  void *data, IColumn &field) const override {
+		void set(IStatement &writer, const  void *data, IColumn &field) override {
 			//noop
 		}
-		void get(IResultSet &reader, void *data, IColumn &field) const override {
+		void get(IResultSet &reader, void *data, IColumn &field) override {
 			//noop
 		}
-		const std::string type(const IMetaData &mdata, const IColumn &field) const {
+		const std::string name(const IMetaData &mdata, const IColumn &field) const override {
 			return std::string();
 		}
 
@@ -151,6 +219,12 @@ namespace dk {
 			return r.ptr != 0;
 		}
 		
+		size_t getSize() const override {return 0;}
+
 		bool selectable() const override { return false; }
+
+		IType &getType() {
+			return *this;
+		}
 	};
 }

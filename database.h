@@ -3,6 +3,9 @@
 #include <string>
 #include <memory>
 #include <boost/lexical_cast.hpp>
+#include "type.h"
+#include "xform.h"
+#include <iostream>
 
 namespace dk {
 	class MetaData : public IMetaData{
@@ -131,7 +134,7 @@ namespace dk {
 		std::stringstream ss;
 		ss << "select ";
 		bool first = true;
-		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
+		for (auto &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
 			ss << (column->selectable() ? "" : "null as ");
@@ -145,15 +148,14 @@ namespace dk {
 		std::stringstream ss;
 		ss << "insert into " << record.getName() << "(";
 		bool first = true;
-		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
+		for (auto &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
 			ss << column->getColumnName();
 		}
 		ss << " ) values ( ";
 		first = true;
-		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
-			(void)column; // suppress warning about column not used
+		for (auto &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
 			ss << bindVar(column->getColumnName());
@@ -167,11 +169,11 @@ namespace dk {
 		std::stringstream ss;
 		ss << "create table " << record.getName() << "(";
 		bool first = true;
-		for (const std::unique_ptr<IColumn> &column : record.getColumns()) {
+		for (auto &column : record.getColumns()) {
 			if (!first) ss << ",";
 			else first = false;
 			std::string name = column->getColumnName();
-			std::string type = column->getType()->name(*this);
+			std::string type = column->getType().name(*this, *column);
 			ss << name << " " << type ;
 		}
 		ss << ")";
@@ -181,22 +183,22 @@ namespace dk {
 	/****************************************** Resultset ***************************/
 
 	inline void ResultSet::get(bool &value, IColumn &column) {
-		Type<bool> type = dynamic_cast<Type<bool>(column.getType());
-		get(type->buff,column);
-		type->set(value);
+		auto type = column.getType<bool>();
+		get(type.buff,column);
+		type.set(value);
 	}
 
 	template<class T>
 	inline void ResultSet::getInt64(T &t, IColumn &column) {
 		int64_t i;
 		get(i, column);
-		t = boost::lexical_cast<T>(i);
+		t = static_cast<T>(i);
 	}
 	
 	inline void ResultSet::getDouble(float &t, IColumn &column) {
 		double d;
 		get(d, column);
-		t = boost::lexical_cast<float>(d);
+		t = static_cast<float>(d);
 	}
 	inline void ResultSet::get(float &value, IColumn &column) {
 		getDouble(value, column);
@@ -211,7 +213,7 @@ namespace dk {
 	inline void ResultSet::get(int64_t &value, IColumn &column) {
 		double d;
 		get(d, column);
-		value = d;
+		value = static_cast<int64_t>(d);
 	}
 	inline void ResultSet::get(uint16_t &value, IColumn &column) {
 		getInt64(value, column);
@@ -222,7 +224,7 @@ namespace dk {
 	inline void ResultSet::get(uint64_t &value, IColumn &column) {
 		double d;
 		get(d, column);
-		value = d;
+		value = static_cast<uint64_t>(d);
 	}
 	inline void ResultSet::get(Number &value, IColumn &column) {
 		double d;
@@ -231,12 +233,13 @@ namespace dk {
 	}
 
 	inline void ResultSet::get(struct tm &v, IColumn &column) {
-		get(dynamic_cast<Type<T>*>(column.getType())->buff,column);
-		type.set(v);
+		auto type = column.getType<tm>();
+		get(type.buff.data(),column);
+		type.setV(v);
 	}
 
-	/****************************************** Statement ***************************/=
-	template<class S,class T>
+	/****************************************** Statement ***************************/
+	template <class S,class T>
 	inline void Statement::set_(const T &t, IColumn &column) {
 		set( static_cast<S>(t),column);
 	}
@@ -281,7 +284,7 @@ namespace dk {
 	}
 
 	inline void Statement::set(const struct tm &v, IColumn &column) {
-		set(dynamic_cast<Type<tm> * (f->getType())->asString(tm),column);
+		set(column.getType<tm>().asString(v),column);
 	};
 
 	inline void Statement::commit() { conn.commit(); }

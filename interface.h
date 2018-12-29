@@ -19,6 +19,7 @@ namespace dk {
 	class IRecord;
 	template<class T>
 	const std::map<typename T::key_type, T> &getMap(Store &s);
+	template<class T> class Type;
 
 	class IMetaData {
 	protected:
@@ -58,7 +59,6 @@ namespace dk {
 		virtual void get(struct tm &v, IColumn &f) = 0;
 		virtual void get(Number &v, IColumn &f) = 0;
 		virtual void get(char *v, IColumn &f) = 0;
-		virtual void get(IColumn &f) = 0;
 	};
 
 	class IStatement {
@@ -83,7 +83,6 @@ namespace dk {
 		virtual void set(const char *v, IColumn &f) = 0;
 		virtual void set(const struct tm &v, IColumn &f) = 0;
 		virtual void set(const Number &v, IColumn &f) = 0;
-		virtual void set( IColumn &f) = 0;
 	};
 
 	class IConnection {
@@ -92,7 +91,6 @@ namespace dk {
 		virtual std::unique_ptr<IStatement> createStatement(const std::string &sql) = 0;
 		virtual void execute(const std::string &sql) = 0;
 		virtual IMetaData &getMetaData() = 0;
-		virtual std::unique_ptr<IStatement> createStatement() = 0;
 		virtual void rollback() = 0;
 		virtual void commit() = 0;
 	};
@@ -100,8 +98,8 @@ namespace dk {
 	class IType {
 	public:
 		virtual ~IType() {}
-		virtual void set(IStatement &writer, const  void *data, IColumn &field) const = 0;
-		virtual void get(IResultSet &reader, void *data, IColumn &field) const = 0;
+		virtual void set(IStatement &writer, const  void *data, IColumn &field) = 0;
+		virtual void get(IResultSet &reader, void *data, IColumn &field) = 0;
 		virtual const std::string name(const IMetaData &mdata, const IColumn &field) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual bool selectable() const = 0;
@@ -110,16 +108,25 @@ namespace dk {
 
 	class IColumn {
 	public:
-		virtual std::string getName() const = 0;
+		virtual std::string getColumnName() const = 0;
 		virtual void set(IStatement &writer, const  void *data) = 0;
 		virtual void get(IResultSet &reader, void *data) = 0;
-//		virtual const std::string type(const IMetaData &metadata) const = 0;
 		virtual bool resolve(Store &, void *data) const = 0;
 		virtual int getColumnPosition() const = 0;
-		virtual std::string getColumnName() const = 0;
 		virtual void other(std::shared_ptr<IColumn> &other) = 0;
 		virtual ~IColumn() {}
-		virtual const IType *getType() const = 0;
+		virtual IType &getType() = 0;
+		const IType &getType() const {
+			return const_cast<IColumn*>(this)->getType();
+		}
+		template<class T>
+		Type<T> &getType() {
+			return dynamic_cast<Type<T>&>(getType());
+		}
+		template<class T>
+		const Type<T> &getType() const {
+			return const_cast<IColumn*>(this)->getType<T>();
+		}
 		virtual bool selectable() const = 0;
 	};
 

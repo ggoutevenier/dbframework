@@ -42,10 +42,10 @@ int main(int argc, char *argv[]) {
 //						"/home/gerard/shape2.db",
 //						SQLITE_OPEN_CREATE|SQLITE_OPEN_READWRITE);
 
-//		Sink<layout::Shape> sink(dst);
+		Sink<layout::Shape> sink(dst);
 
 			for (layout::Shape const *shape : store.projection<layout::Shape>()) {
-//				sink.push_back(*shape);
+				sink.push_back(*shape);
 				std::cout
 					<< shape->shapeName
 					<< " : "

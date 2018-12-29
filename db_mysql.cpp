@@ -181,9 +181,9 @@ namespace dk {
 			flush();
 		}
 
-		void Statement::set(const char *v, IColumn &f) {
-			std::string str(v,&v[std::min(strlen(v),f.getSize()-1)]);
-			stmt->setString(f.getColumnPosition(), str);
+		void Statement::set(const char *v, IColumn &column) {
+			auto type = column.getType<char*>();
+			stmt->setString(column.getColumnPosition(), type.asString(v));
 		}
 		void Statement::set(const std::int64_t &v, IColumn &f) {
 			stmt->setInt(f.getColumnPosition(), v);
@@ -196,17 +196,20 @@ namespace dk {
 		std::string MetaData::bindVar(const std::string column) const { return "?";}
 		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
 		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
-		const std::string MetaData::typeNumber(const IColumn &f) const {
+		const std::string MetaData::typeNumber(const IColumn &column) const {
+			auto type = column.getType<Number>();
 			std::stringstream ss;
 
-			ss << "decimal(" << f.getPrecision()<<","<<f.getScale()<<")";
+			ss << "decimal(" << type.getPrecision()<<","<<type.getScale()<<")";
 			return ss.str();
 		}
-		const std::string MetaData::typeString(const IColumn &f) const {
-			if(f.getSize()>0) {
+		const std::string MetaData::typeString(const IColumn &column) const {
+			auto type = column.getType<char*>();;
+
+			if(type.getSize()>0) {
 				std::stringstream ss;
 
-				ss << "varchar("<<f.getSize()<<")";
+				ss << "varchar("<<type.getSize()<<")";
 				return ss.str();
 			}
 			return "char(1)";
@@ -214,11 +217,10 @@ namespace dk {
 
 		ResultSet::~ResultSet() {
 		}
-		void ResultSet::get(char *v, IColumn &f) {
-			std::string str = rset->getString(f.getColumnPosition());
-			size_t n=std::min(str.length(),f.getSize());
-			std::copy_n(str.begin(),n,v);
-			v[n]=0;
+		void ResultSet::get(char *v, IColumn &column) {
+			auto type = column.getType<char *>();;
+			std::string str = rset->getString(column.getColumnPosition());
+			type.fromString(str, v);
 		}
 		void ResultSet::get(double &v, IColumn &f) {
 			v = rset->getDouble(f.getColumnPosition());

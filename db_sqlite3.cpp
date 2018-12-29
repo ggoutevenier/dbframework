@@ -222,13 +222,14 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const char *v, IColumn &f) {
+		void Statement::set(const char *v, IColumn &column) {
 			int rc;
-			size_t n = std::min(strlen(v),f.getSize());
+			auto type = column.getType<char *>();
+			size_t n = std::min(strlen(v),type.getSize());
 			if (v==0)
-				rc = sqlite3_bind_null(stmt, f.getColumnPosition());
+				rc = sqlite3_bind_null(stmt, column.getColumnPosition());
 			else {
-				rc = sqlite3_bind_text(stmt, f.getColumnPosition(), v, (int)n, 0);
+				rc = sqlite3_bind_text(stmt, column.getColumnPosition(), v, (int)n, 0);
 			}
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -236,9 +237,9 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const std::int64_t &v, IColumn &f) {
+		void Statement::set(const std::int64_t &v, IColumn &column) {
 			int rc;
-			rc = sqlite3_bind_int64(stmt, f.getColumn(), v);
+			rc = sqlite3_bind_int64(stmt, column.getColumnPosition(), v);
 
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -247,9 +248,9 @@ namespace dk {
 		}
 
 
-		void Statement::set(const double &v, IColumn &f) {
+		void Statement::set(const double &v, IColumn &column) {
 			int rc;
-			rc = sqlite3_bind_double(stmt, f.getColumn(), v);
+			rc = sqlite3_bind_double(stmt, column.getColumnPosition(), v);
 
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -265,17 +266,18 @@ namespace dk {
 			getStatement().reset();
 		}
 
-		void ResultSet::get(double &v, IColumn &f) {
-			v = sqlite3_column_double(getStatement().stmt, f.getColumn() - 1);
+		void ResultSet::get(double &v, IColumn &column) {
+			v = sqlite3_column_double(getStatement().stmt, column.getColumnPosition() - 1);
 		}
-		void ResultSet::get(int64_t &v, IColumn &f) {
-			v = sqlite3_column_int64(getStatement().stmt, f.getColumn() - 1);
+		void ResultSet::get(int64_t &v, IColumn &column) {
+			v = sqlite3_column_int64(getStatement().stmt, column.getColumnPosition() - 1);
 		}
 
-		void ResultSet::get(char *v, IColumn &f) {
+		void ResultSet::get(char *v, IColumn &column) {
 			const char *c;
-			c = (const char *)sqlite3_column_text(getStatement().stmt, f.getColumn() - 1);
-			size_t n = std::min(strlen(c),f.getSize());
+			auto type = column.getType<char *>();
+			c = (const char *)sqlite3_column_text(getStatement().stmt, column.getColumnPosition() - 1);
+			size_t n = std::min(strlen(c),type.getSize());
 			std::copy_n(c,n,v);
 			v[n]=0;
 		}

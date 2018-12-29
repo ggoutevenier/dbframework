@@ -25,7 +25,7 @@ namespace dk {
 		Column<T> &add(B &b, T &t, const std::string &name) {
 			IColumn *ptr = 0;
 			for (auto &column : columns) {// replace with std::find_if
-				if (name == column->getName()) {
+				if (name == column->getColumnName()) {
 					ptr = column.get();
 					break;
 				}
