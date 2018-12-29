@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 					<< shape->area()
 					<< std::endl;
 			}
-//			store.save(dst);
+			store.save(dst);
 		}
 	}
 	catch (std::exception &e) {

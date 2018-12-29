@@ -13,7 +13,7 @@ namespace dk {
 	class Type<std::string > : public Type<char*> {
 		std::vector<char> buff;
 	public:
-		Type() {setSize(0);}
+		Type() {setSize(64);}
 		~Type() {}
 		void set(IStatement &writer, const  void *data, IColumn &column) override {
 			fromString(*static_cast<const std::string*>(data),buff.data());
