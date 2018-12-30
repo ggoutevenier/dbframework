@@ -23,41 +23,46 @@ namespace dk {
 				}
 			}
 			if (ptr) {
-				std::shared_ptr<IColumn> fld =
-					std::make_shared<Column<T> >(getOffset(b, t), name, 0); // check on casting/auto
+				auto fld = static_cast<std::shared_ptr<IColumn> >(
+					std::make_shared<Column<T> >(getOffset(b, t), name, 0));
+
+//				std::shared_ptr<IColumn> fld =
+//					std::make_shared<Column<T> >(getOffset(b, t), name, 0); // check on casting/auto
 
 				ptr->other(fld);
 			}
 			else {
-				columns.push_back( // check on emplace
-					std::make_unique<Column<T> >(
+				auto v=std::make_unique<Column<T> >(
 						getOffset(b, t),
 						name,
-						(int)columns.size() + 1)
-				);
+						(int)columns.size() + 1);
+				ptr=v.get();
+				columns.push_back(std::move(v));
 			}
-			return *(Column<T>*)columns.back().get(); // might have race condition
+			return *static_cast<Column<T>*>(ptr);
 		}
 
 		template<class B, class T>
 		Column<const logic::Function<T> *>  &add(B &b, const logic::Function<T> * &t) {
-			refs.push_back( // check on emplace
-				std::make_unique<Column<const logic::Function<T> * > >(
+			using F = Column<const logic::Function<T>*>;
+			auto v = std::make_unique<F>(
 					getOffset(b, t),
-					(int)refs.size() + 1)
-			);
-			return *(Column<const logic::Function<T> * >*)refs.back().get(); // might have race condition
+					(int)refs.size() + 1);
+			refs.push_back(std::move(v));
+
+			return *static_cast<F *>(v.get());
 		}
 
 		template<class B, class T>
 		Column<Ref<T> > &add(B &b, Ref<T> &t, const std::string &name) {
-			refs.push_back( // check on emplace
-				std::make_unique<Column<Ref<T> > >(
+			using R = Column<Ref<T> >;
+			auto v = std::make_unique<R >(
 					getOffset(b, t),
 					name,
-					(int)refs.size() + 1)
-			);
-			return *(Column<Ref<T> >*)refs.back().get(); // might have race condition
+					(int)refs.size() + 1);
+
+			refs.push_back(std::move(v));
+			return *static_cast<R *>(v.get());
 		}
 	};
 

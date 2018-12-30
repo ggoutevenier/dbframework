@@ -2,6 +2,7 @@
 #include "interface.h"
 #include "ref.h"
 #include <algorithm>
+#include <cstring>
 //#include "sequence.h"
 
 namespace dk {
@@ -167,7 +168,7 @@ namespace dk {
 	};
 
 
-	template<>
+/*	template<>
 	class Type < Sequence > : public TypeBase<Sequence::type> {
 	public:
 		virtual ~Type() {}
@@ -181,7 +182,7 @@ namespace dk {
 		bool selectable() const override {
 			return false;
 		}
-	};
+	};*/
 
 	template<class T>
 	class Type <Ref<T>> : public IType { // can it inherit from type<T>

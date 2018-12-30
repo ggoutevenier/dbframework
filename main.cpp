@@ -23,10 +23,13 @@
 //	- the implementation of the database interface for sqlite
 ///////////////////////////////////////////////////////////////////////////////
 using namespace dk;
-
+void test(int argc, char *argv[]);
 int main(int argc, char *argv[]) {
 	try {
+		test(argc,argv);
+		return 0;
 		// define object store using a sqlite database
+
 		Store store(
 			sqlite::make_connection("/home/gerard/shape.db", SQLITE_OPEN_READONLY)
 		);
