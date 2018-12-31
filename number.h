@@ -15,7 +15,7 @@ namespace dk {
 		Number(int64_t v,int p) :
 			v(v),p(p){}
 		double asDouble() const {
-			return v/pow(10,p);
+			return (double)v/pow(10,p);
 		}
 		void fromDouble(double d) {
 			v=d*pow(10,p);

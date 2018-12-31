@@ -13,22 +13,21 @@ namespace dk {
 		void set(
 			IStatement &writer,
 			const void *data,
-			IColumn &field
+			uint32_t pos
 		) override {
-			writer.set(*static_cast<const T *>(data), field);
+			writer.set(*static_cast<const T *>(data), *this, pos);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
-			IColumn &field
+			uint32_t pos
 		) override {
-			reader.get(*static_cast<T *>(data), field);
+			reader.get(*static_cast<T *>(data), *this, pos);
 		}
 		const std::string name(
-			const IMetaData &mdata,
-			const IColumn &field
+			const IMetaData &mdata
 		) const override {
-			return mdata.type<T>(field);
+			return mdata.type<T>(*this);
 		}
 		bool resolve(Store &, void *data) const override {
 			return true;
@@ -38,6 +37,16 @@ namespace dk {
 		}
 		size_t getSize() const override {return 0;}
 		IType &getType() {return *this;}
+		std::string asString(const char *v) {
+			size_t n = std::min(strlen(v),getSize());
+			std::string str(v,&v[n]);
+			return str;
+		}
+		void fromString(const std::string str,char *v) {
+			size_t n=std::min(str.length(),getSize());
+			std::copy_n(str.begin(),n,v);
+			v[n]=0;
+		}
 	};
 
 	template<class T>
@@ -72,16 +81,6 @@ namespace dk {
 		size_t size;
 	public:
 		Type(size_t size=0):size(size) {}
-		std::string asString(const char *v) {
-			size_t n = std::min(strlen(v),getSize());
-			std::string str(v,&v[n]);
-			return str;
-		}
-		void fromString(const std::string str,char *v) {
-			size_t n=std::min(str.length(),getSize());
-			std::copy_n(str.begin(),n,v);
-			v[n]=0;
-		}
 		Type<char *> setSize(size_t size) {
 			this->size=size;
 			return *this;
@@ -92,18 +91,42 @@ namespace dk {
 		void set(
 			IStatement &writer,
 			const void *data,
-			IColumn &field
+			uint32_t pos
 		) override {
-			writer.set(static_cast<const char *>(data), field);
+			writer.set(static_cast<const char *>(data), *this, pos);
 		}
 		void get(
 			IResultSet &reader,
 			void *data,
-			IColumn &field
+			uint32_t pos
 		) override {
-			reader.get(static_cast<char *>(data), field);
+			reader.get(static_cast<char *>(data), *this, pos);
 		}
 	};
+
+	template<>
+	class Type<std::string > : public TypeBase<std::string> {
+		std::vector<char> buff;
+	public:
+		Type() {setSize(64);}
+		~Type() {}
+		char *getBuff() {return buff.data();}
+		const char *getBuff() const {return buff.data();}
+		Type<std::string> setSize(size_t size) {
+			buff.resize(size+1);
+			return *this;
+		}
+		size_t getSize() const override {
+			return buff.size()-1;
+		}
+		void fromString(std::string value) {
+			TypeBase<std::string>::fromString(value,getBuff());
+		}
+		std::string asString() {
+			return TypeBase<std::string>::asString(getBuff());
+		}
+	};
+
 
 	template<>
 	class Type<tm> : public TypeBase<tm> {
@@ -127,7 +150,8 @@ namespace dk {
 				&date.tm_hour,
 				&date.tm_min,
 				&date.tm_sec);
-
+			date.tm_isdst = 0;
+			date.tm_gmtoff = 0;
 			date.tm_year -= 1900;
 			date.tm_mon -= 1;
 			mktime(&date);
@@ -156,10 +180,10 @@ namespace dk {
 		char buff[2];
 		Type(std::array<char, 2> TF = { '1','0' }) : TF(TF) {buff[1]=0;}
 		~Type() {}
-		void set(bool &value) {
+		void getV(bool &value) const {
 			value = (TF[0]==buff[0]);
 		}
-		void get(bool &value, IColumn &field) {
+		void setV(const bool &value) {
 			buff[0] = TF.at(value == false);
 		}
 		size_t getSize() const override {
@@ -190,13 +214,13 @@ namespace dk {
 		typedef Ref<T> R;
 	protected:
 	public:
-		void set(IStatement &writer, const  void *data, IColumn &field) override {
+		void set(IStatement &writer, const  void *data, uint32_t pos) override {
 			//noop
 		}
-		void get(IResultSet &reader, void *data, IColumn &field) override {
+		void get(IResultSet &reader, void *data,  uint32_t pos) override {
 			//noop
 		}
-		const std::string name(const IMetaData &mdata, const IColumn &field) const override {
+		const std::string name(const IMetaData &mdata) const override {
 			return std::string();
 		}
 

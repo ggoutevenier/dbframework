@@ -17,6 +17,7 @@ namespace dk {
 		const void *adjust(const void *data) const {
 			return static_cast<const char*>(data) + offset;
 		}
+		virtual const IType &getType() const = 0;
 	public:
 		ColumnBase(size_t offset, const std::string &name, int position) :
 			offset(offset), name(name), position(position) {}
@@ -24,7 +25,7 @@ namespace dk {
 
 		std::string getColumnName() const override { return name; }
 
-		int getColumnPosition() const override{ return position; }
+//		int getColumnPosition() const override{ return position; }
 
 		void other(std::shared_ptr<IColumn> &o) {
 			static_cast<ColumnBase *>(o.get())->position = this->position;
@@ -32,6 +33,9 @@ namespace dk {
 		}
 		bool selectable() const override {
 			return getType().selectable();
+		}
+		std::string getTypeName(const IMetaData &mdata) const override {
+			return getType().name(mdata);
 		}
 	};
 
@@ -44,11 +48,11 @@ namespace dk {
 		virtual ~Column() {}
 
 		void set(IStatement &writer, const  void *data) override {
-			Type<T>::set(writer, adjust(data), *this);
+			Type<T>::set(writer, adjust(data), position);
 		}
 
 		void get(IResultSet &reader, void *data) override {
-			Type<T>::get(reader, adjust(data), *this);
+			Type<T>::get(reader, adjust(data), position);
 			for (auto &v : others) //populate others
 				v->get(reader, data);
 		}
@@ -57,8 +61,8 @@ namespace dk {
 			return Type<T>::resolve(store, adjust(data));
 		}
 
-		IType &getType() override {
-			return Type<T>::getType();
+		const IType &getType() const override {
+			return *this;
 		}
 	};
 
@@ -74,7 +78,7 @@ namespace dk {
 		void set(IStatement &writer, const  void *data) override {}
 		void get(IResultSet &reader, void *data) override {}
 
-		IType &getType() override {
+		const IType &getType() const override {
 			assert(0);
 			return *(IType*)nullptr;
 		} // TODO fix this

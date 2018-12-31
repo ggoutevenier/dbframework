@@ -35,9 +35,9 @@ namespace dk {
 		private:
 			Connection & getConnection() { return (Connection&)conn; }
 		protected:
-			const std::string typeInt64(const IColumn  &f) const override;
-			const std::string typeDouble(const IColumn   &f) const override;
-			const std::string typeString(const IColumn  &f) const override;
+			const std::string typeInt64(const IType  &type) const override;
+			const std::string typeDouble(const IType   &type) const override;
+			const std::string typeString(const IType  &type) const override;
 			std::string bindVar(const std::string name) const override;
 		public:
 			virtual ~MetaData() {}
@@ -51,9 +51,9 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-			virtual void get(char *v, IColumn &f) override;
-			virtual void get(double &v, IColumn &f) override;
-			virtual void get(int64_t &v, IColumn &f) override;
+			virtual void get(char *v, IType &type, uint32_t pos) override;
+			virtual void get(double &v, IType &type, uint32_t pos) override;
+			virtual void get(int64_t &v, IType &type, uint32_t pos) override;
 			bool next() override;
 		};
 
@@ -73,9 +73,9 @@ namespace dk {
 			void query(const std::string &sql);
 			std::unique_ptr<IResultSet> executeQuery() override;
 			bool execute() override;
-			virtual void set(const std::int64_t &v, IColumn &f) override;
-			virtual void set(const double &v, IColumn &f) override;
-			virtual void set(const char *v, IColumn &f) override;
+			virtual void set(const std::int64_t &v, IType &type, uint32_t pos) override;
+			virtual void set(const double &v, IType &type, uint32_t pos) override;
+			virtual void set(const char *v, IType &type, uint32_t pos) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) :
@@ -222,14 +222,14 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const char *v, IColumn &column) {
+		void Statement::set(const char *v, IType &itype, uint32_t pos) {
 			int rc;
-			auto type = column.getType<char *>();
-			size_t n = std::min(strlen(v),type.getSize());
+			auto type = static_cast<Type<char *>*>(&itype);
+			size_t n = std::min(strlen(v),type->getSize());
 			if (v==0)
-				rc = sqlite3_bind_null(stmt, column.getColumnPosition());
+				rc = sqlite3_bind_null(stmt, pos);
 			else {
-				rc = sqlite3_bind_text(stmt, column.getColumnPosition(), v, (int)n, 0);
+				rc = sqlite3_bind_text(stmt, pos, v, (int)n, 0);
 			}
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -237,9 +237,9 @@ namespace dk {
 			}
 		}
 
-		void Statement::set(const std::int64_t &v, IColumn &column) {
+		void Statement::set(const std::int64_t &v, IType &type, uint32_t pos) {
 			int rc;
-			rc = sqlite3_bind_int64(stmt, column.getColumnPosition(), v);
+			rc = sqlite3_bind_int64(stmt, pos, v);
 
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -248,9 +248,9 @@ namespace dk {
 		}
 
 
-		void Statement::set(const double &v, IColumn &column) {
+		void Statement::set(const double &v, IType &type, uint32_t pos) {
 			int rc;
-			rc = sqlite3_bind_double(stmt, column.getColumnPosition(), v);
+			rc = sqlite3_bind_double(stmt, pos, v);
 
 			if (rc != SQLITE_OK) {
 				const char *err = sqlite3_errmsg(getConnection().DB);
@@ -258,26 +258,26 @@ namespace dk {
 			}
 		}
 		std::string MetaData::bindVar(const std::string name) const { return ":"+name;}
-		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
-		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
-		const std::string MetaData::typeString(const IColumn &f) const {return "Text";}
+		const std::string MetaData::typeInt64(const IType &) const { return "BIGINT"; }
+		const std::string MetaData::typeDouble(const IType &) const { return "DOUBLE"; }
+		const std::string MetaData::typeString(const IType &) const {return "Text";}
 
 		ResultSet::~ResultSet() {
 			getStatement().reset();
 		}
 
-		void ResultSet::get(double &v, IColumn &column) {
-			v = sqlite3_column_double(getStatement().stmt, column.getColumnPosition() - 1);
+		void ResultSet::get(double &v, IType &type,uint32_t pos) {
+			v = sqlite3_column_double(getStatement().stmt, pos - 1);
 		}
-		void ResultSet::get(int64_t &v, IColumn &column) {
-			v = sqlite3_column_int64(getStatement().stmt, column.getColumnPosition() - 1);
+		void ResultSet::get(int64_t &v, IType &type,uint32_t pos) {
+			v = sqlite3_column_int64(getStatement().stmt, pos - 1);
 		}
 
-		void ResultSet::get(char *v, IColumn &column) {
+		void ResultSet::get(char *v, IType &itype,uint32_t pos) {
 			const char *c;
-			auto type = column.getType<char *>();
-			c = (const char *)sqlite3_column_text(getStatement().stmt, column.getColumnPosition() - 1);
-			size_t n = std::min(strlen(c),type.getSize());
+			auto type = static_cast<Type<char *>*>(&itype);
+			c = (const char *)sqlite3_column_text(getStatement().stmt, pos - 1);
+			size_t n = std::min(strlen(c),type->getSize());
 			std::copy_n(c,n,v);
 			v[n]=0;
 		}

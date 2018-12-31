@@ -52,15 +52,14 @@ namespace dk {
 		private:
 			Connection & getConnection() { return (Connection&)conn; }
 		protected:
-			const std::string typeInt64(const IColumn &f) const override;
-			const std::string typeDouble(const IColumn &f) const override;
-			const std::string typeString(const IColumn &f) const override;
-			const std::string typeNumber(const IColumn &f) const override;
+			const std::string typeInt64(const IType &type) const override;
+			const std::string typeDouble(const IType &type) const override;
+			const std::string typeString(const IType &type) const override;
+			const std::string typeNumber(const IType &type) const override;
 			std::string bindVar(const std::string name) const override;
 		public:
 			virtual ~MetaData() {}
 			MetaData(IConnection &conn);
-//			std::string insertSQL(const IRecord &record) const override;
 		};
 		class Statement;
 		class ResultSet : public dk::ResultSet {
@@ -70,11 +69,10 @@ namespace dk {
 		public:
 			virtual ~ResultSet();
 			ResultSet(IStatement &stmt);
-//			virtual void get(std::string &v, const IColumn &f) override;
-			virtual void get(char *v, IColumn &f) override;
-			virtual void get(double &v, IColumn &f) override;
-			virtual void get(int64_t &v, IColumn &f) override;
-//			virtual void get(IColumn &f) override;
+			virtual void get(std::string &v, IType &type, uint32_t pos) override;
+			virtual void get(char *v, IType &type, uint32_t pos) override;
+			virtual void get(double &v, IType &type, uint32_t pos) override;
+			virtual void get(int64_t &v, IType &type, uint32_t pos) override;
 			bool next() override;
 		};
 
@@ -91,11 +89,10 @@ namespace dk {
 			void query(const std::string &sql);
 			std::unique_ptr<IResultSet> executeQuery() override;
 			bool execute() override;
-			virtual void set(const char *v, IColumn &f) override;
-			virtual void set(const std::int64_t &v, IColumn &f) override;
-			virtual void set(const double &v, IColumn &f) override;
-//			virtual void set(const std::string &v, IColumn &f) override;
-//			virtual void set(const IColumn &f) override;
+			virtual void set(const std::string &v, IType &type, uint32_t pos) override;
+			virtual void set(const char *v, IType &type, uint32_t pos) override;
+			virtual void set(const std::int64_t &v, IType &type, uint32_t pos) override;
+			virtual void set(const double &v, IType &type, uint32_t pos) override;
 		};
 
 		inline ResultSet::ResultSet(IStatement &stmt) : dk::ResultSet(stmt) {
@@ -181,52 +178,60 @@ namespace dk {
 			flush();
 		}
 
-		void Statement::set(const char *v, IColumn &column) {
-			auto type = column.getType<char*>();
-			stmt->setString(column.getColumnPosition(), type.asString(v));
-		}
-		void Statement::set(const std::int64_t &v, IColumn &f) {
-			stmt->setInt(f.getColumnPosition(), v);
+		void Statement::set(const std::string &v, IType &itype, uint32_t pos) {
+			stmt->setString(pos, v);
 		}
 
-		void Statement::set(const double &v, IColumn &f) {
-			stmt->setDouble(f.getColumnPosition(), v);
+		void Statement::set(const char *v, IType &itype, uint32_t pos) {
+			auto type = static_cast<Type<char*> *>(&itype);
+			stmt->setString(pos, type->asString(v));
+		}
+		void Statement::set(const std::int64_t &v, IType &type, uint32_t pos) {
+			stmt->setInt(pos, v);
+		}
+
+		void Statement::set(const double &v, IType &type, uint32_t pos) {
+			stmt->setDouble(pos, v);
 		}
 
 		std::string MetaData::bindVar(const std::string column) const { return "?";}
-		const std::string MetaData::typeInt64(const IColumn &f) const { return "BIGINT"; }
-		const std::string MetaData::typeDouble(const IColumn &f) const { return "DOUBLE"; }
-		const std::string MetaData::typeNumber(const IColumn &column) const {
-			auto type = column.getType<Number>();
+		const std::string MetaData::typeInt64(const IType &) const { return "BIGINT"; }
+		const std::string MetaData::typeDouble(const IType &) const { return "DOUBLE"; }
+		const std::string MetaData::typeNumber(const IType &itype) const {
+			auto type = static_cast<const Type<Number>*>(&itype);
 			std::stringstream ss;
 
-			ss << "decimal(" << type.getPrecision()<<","<<type.getScale()<<")";
+			ss << "decimal(" << type->getPrecision()<<","<<type->getScale()<<")";
 			return ss.str();
 		}
-		const std::string MetaData::typeString(const IColumn &column) const {
-			auto type = column.getType<char*>();;
-
-			if(type.getSize()>0) {
+		const std::string MetaData::typeString(const IType &itype) const {
+			auto type = static_cast<const Type<char*>*>(&itype);
+			if(type->getSize()>0) {
 				std::stringstream ss;
 
-				ss << "varchar("<<type.getSize()<<")";
+				ss << "varchar("<<type->getSize()<<")";
 				return ss.str();
 			}
 			return "char(1)";
 		}
 
-		ResultSet::~ResultSet() {
+		ResultSet::~ResultSet() {}
+
+		void ResultSet::get(std::string &v, IType &, uint32_t pos) {
+			v = rset->getString(pos);
 		}
-		void ResultSet::get(char *v, IColumn &column) {
-			auto type = column.getType<char *>();;
-			std::string str = rset->getString(column.getColumnPosition());
-			type.fromString(str, v);
+
+		void ResultSet::get(char *v, IType &itype, uint32_t pos) {
+			auto type = static_cast<Type<char*>*>(&itype);
+			std::string str = rset->getString(pos);
+			type->fromString(str, v);
 		}
-		void ResultSet::get(double &v, IColumn &f) {
-			v = rset->getDouble(f.getColumnPosition());
+
+		void ResultSet::get(double &v, IType &, uint32_t pos) {
+			v = rset->getDouble(pos);
 		}
-		void ResultSet::get(int64_t &v, IColumn &f) {
-			v = rset->getInt64(f.getColumnPosition());
+		void ResultSet::get(int64_t &v, IType &, uint32_t pos) {
+			v = rset->getInt64(pos);
 		}
 	}
 }

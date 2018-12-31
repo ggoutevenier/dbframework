@@ -9,27 +9,6 @@
  * before it is put into the C++ class
  */
 namespace dk {
-	template<>
-	class Type<std::string > : public Type<char*> {
-		std::vector<char> buff;
-	public:
-		Type() {setSize(64);}
-		~Type() {}
-		void set(IStatement &writer, const  void *data, IColumn &column) override {
-			fromString(*static_cast<const std::string*>(data),buff.data());
-			Type<char*>::set(writer,buff.data(),column);
-		}
-		void get(IResultSet &reader, void *data, IColumn &column) override {
-			Type<char*>::get(reader,buff.data(),column);
-			*static_cast<std::string*>(data) = asString(buff.data());
-		}
-		Type<std::string> setSize(size_t size) {
-			buff.resize(size+1);
-			Type<char *>::setSize(size);
-			return *this;
-		}
-	};
-
 	template<size_t N>
 	class Type<char[N] > : public Type<char *> {
 		public:
@@ -46,13 +25,13 @@ namespace dk {
 	public:
 		Type() {}
 		~Type() {}
-		void set(IStatement &writer, const  void *data, IColumn &column) override {
+		void set(IStatement &writer, const  void *data, uint32_t pos) override {
 			auto v = static_cast<const char*>(data);
-			Type<char[1]>::set(writer, v, column);
+			Type<char[1]>::set(writer, v, pos);
 		}
-		void get(IResultSet &reader, void *data, IColumn &column) override {
+		void get(IResultSet &reader, void *data, uint32_t pos) override {
 			auto v = static_cast<char*>(data);
-			Type<char[1]>::get(reader,v,column);
+			Type<char[1]>::get(reader,v, pos);
 		}
 	};
 
@@ -61,13 +40,13 @@ namespace dk {
 	public:
 		Type():Type<Number>(18,N) {}
 		~Type() {}
-		void set(IStatement &writer, const  void *data, IColumn &field) override {
+		void set(IStatement &writer, const  void *data, uint32_t pos) override {
 			Number src(static_cast<const dec::decimal<N>*>(data)->getUnbiased(),N);
-			Type<Number>::set(writer, &src, field);
+			Type<Number>::set(writer, &src, pos);
 		}
-		void get(IResultSet &reader, void *data, IColumn &field) override {
+		void get(IResultSet &reader, void *data, uint32_t pos) override {
 			Number src(0,N);
-			Type<Number>::get(reader, &src, field);
+			Type<Number>::get(reader, &src, pos);
 			if(src.p!=N)
 				src.v*=pow(10,N-src.p);
 			static_cast<dec::decimal<N>*>(data)->setUnbiased(src.v);
