@@ -1,4 +1,5 @@
 #pragma once
+#include "interface.h"
 #include "column.h"
 
 namespace dk {

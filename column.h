@@ -1,5 +1,5 @@
 #pragma once
-//#include "interface.h"
+#include "interface.h"
 #include "function.h"
 #include "xform.h"
 #include <algorithm>
